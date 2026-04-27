@@ -85,7 +85,7 @@ export default function Dashboard() {
                 cx="50%"
                 cy="100%"
                 outerRadius={220}
-                innerRadius={198}
+                innerRadius={185}
                 paddingAngle={holdingSegments === EMPTY ? 0 : 2}
                 fill="#e4e4e7"
               >
