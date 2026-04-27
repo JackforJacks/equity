@@ -83,11 +83,11 @@ export async function GET() {
   const total = Object.values(typeValues).reduce((a, b) => a + b, 0);
   if (total === 0) return NextResponse.json([]);
 
-  const result = Object.entries(typeValues).map(([type, value]) => ({
+  const segments = Object.entries(typeValues).map(([type, value]) => ({
     label: type,
     value: Math.round((value / total) * 100),
     color: TYPE_COLORS[type] ?? TYPE_COLORS.Other,
   }));
 
-  return NextResponse.json(result);
+  return NextResponse.json({ segments, total });
 }

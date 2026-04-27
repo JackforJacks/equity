@@ -3,8 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
-import { ChatCircleText } from "@phosphor-icons/react";
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
+import { PieChart, Pie, Tooltip, ResponsiveContainer } from "recharts";
 
 type Segment = { label: string; value: number; color: string };
 
@@ -14,12 +13,18 @@ export default function Dashboard() {
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const [segments, setSegments] = useState<Segment[]>(EMPTY);
+  const [total, setTotal] = useState<number | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetch("/api/portfolio")
       .then((r) => r.json())
-      .then((data: Segment[]) => { if (data.length > 0) setSegments(data); })
+      .then((data: { segments: Segment[]; total: number }) => {
+        if (data.segments?.length > 0) {
+          setSegments(data.segments);
+          setTotal(data.total);
+        }
+      })
       .catch(() => {});
   }, []);
 
@@ -62,7 +67,7 @@ export default function Dashboard() {
         )}
       </div>
 
-      <main className="flex flex-1 flex-col items-center gap-6 px-8 py-16">
+      <main className="flex flex-1 flex-col items-center px-8 py-16">
         <ResponsiveContainer width="100%" height={260}>
           <PieChart>
             <Pie
@@ -76,9 +81,10 @@ export default function Dashboard() {
               outerRadius={220}
               innerRadius={130}
               paddingAngle={isEmpty ? 0 : 2}
+              fill="#e4e4e7"
             >
               {segments.map((s) => (
-                <Cell key={s.label} fill={s.color} />
+                <rect key={s.label} fill={s.color} />
               ))}
             </Pie>
             <Tooltip
@@ -93,10 +99,18 @@ export default function Dashboard() {
             />
           </PieChart>
         </ResponsiveContainer>
+
+        {total !== null && (
+          <p className="mt-2 text-2xl font-semibold text-black dark:text-white">
+            {total.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 2 })}
+          </p>
+        )}
       </main>
 
       <button className="fixed bottom-6 right-6 flex h-14 w-14 items-center justify-center rounded-full bg-black text-white shadow-lg transition-colors hover:bg-zinc-800 dark:bg-white dark:text-black dark:hover:bg-zinc-200">
-        <ChatCircleText size={28} weight="fill" />
+        <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 256 256" fill="currentColor">
+          <path d="M216,48H40A16,16,0,0,0,24,64V224a8,8,0,0,0,13,6.22L72,208H216a16,16,0,0,0,16-16V64A16,16,0,0,0,216,48ZM88,120a12,12,0,1,1,12,12A12,12,0,0,1,88,120Zm40,0a12,12,0,1,1,12,12A12,12,0,0,1,128,120Zm40,0a12,12,0,1,1,12,12A12,12,0,0,1,168,120Z"/>
+        </svg>
       </button>
     </div>
   );
