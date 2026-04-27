@@ -7,10 +7,7 @@ import { ChatCircleText } from "@phosphor-icons/react";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 
 const portfolioData = [
-  { label: "Stocks", value: 40, color: "#1D4ED8" },
-  { label: "ETF",    value: 25, color: "#059669" },
-  { label: "Crypto", value: 20, color: "#F59E0B" },
-  { label: "Bonds",  value: 15, color: "#6B7280" },
+  { label: "Empty", value: 100, color: "#e4e4e7" },
 ];
 
 export default function Dashboard() {
