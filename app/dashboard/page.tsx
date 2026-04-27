@@ -71,8 +71,8 @@ export default function Dashboard() {
         )}
       </div>
 
-      <main className="flex flex-1 flex-col items-center px-8 py-6 overflow-hidden">
-       <div className="flex flex-1 w-1/3 min-h-0 flex-col gap-2">
+      <main className="flex flex-1 flex-col overflow-hidden px-8 py-6">
+       <div className="mx-auto flex flex-1 min-h-0 w-1/3 flex-col gap-2">
         <div className="flex flex-col items-center justify-center rounded-xl border border-zinc-100 px-4 py-4 dark:border-zinc-900">
         <div className="relative w-full">
           <ResponsiveContainer width="100%" height={220}>
