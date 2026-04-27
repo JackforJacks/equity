@@ -2,8 +2,8 @@ export default function Home() {
   return (
     <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
       <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <h2 className="w-full text-6xl font-bold tracking-tight text-center">
-          <span className="text-blue-600">E</span><span className="text-green-500">quity</span>
+        <h2 className="w-full text-7xl font-bold tracking-tight text-center" style={{ fontFamily: "var(--font-space-grotesk)" }}>
+          <span style={{ color: "#1D4ED8" }}>E</span><span style={{ color: "#059669" }}>quity</span>
         </h2>
         <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
           <h1 className="text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
