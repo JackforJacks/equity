@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
-import { PieChart, Pie, Tooltip, ResponsiveContainer } from "recharts";
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 
 type Segment = { label: string; value: number; color: string };
 
@@ -84,7 +84,7 @@ export default function Dashboard() {
               fill="#e4e4e7"
             >
               {segments.map((s) => (
-                <rect key={s.label} fill={s.color} />
+                <Cell key={s.label} fill={s.color} />
               ))}
             </Pie>
             <Tooltip
