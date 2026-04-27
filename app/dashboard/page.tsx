@@ -165,6 +165,11 @@ export default function Dashboard() {
             <span className="text-sm font-medium text-black dark:text-white">Market Correlation</span>
             <span className="text-xs text-zinc-400">how you move with markets</span>
           </div>
+          <div className="col-span-2 flex flex-col items-center gap-1 rounded-2xl border border-zinc-100 py-6 dark:border-zinc-900">
+            <span className="text-5xl font-bold text-black dark:text-white">—</span>
+            <span className="text-sm font-medium text-black dark:text-white">Real Return</span>
+            <span className="text-xs text-zinc-400">return after inflation</span>
+          </div>
         </div>
       </main>
 
