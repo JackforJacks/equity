@@ -146,43 +146,43 @@ export default function Dashboard() {
         )}
         </div>
 
-        <div className="grid flex-1 grid-cols-2 gap-2 content-start">
-          <div className="flex flex-col items-center gap-0.5 rounded-xl border border-zinc-100 py-2 dark:border-zinc-900">
+        <div className="grid flex-1 grid-cols-2 grid-rows-4 gap-2">
+          <div className="flex flex-col items-center justify-center gap-0.5 rounded-xl border border-zinc-100 py-2 dark:border-zinc-900">
             <span className="text-2xl font-bold text-black dark:text-white">—</span>
             <span className="text-xs font-medium text-black dark:text-white">Robustness</span>
             <span className="text-[10px] text-zinc-400">safety + diversification</span>
           </div>
-          <div className="flex flex-col items-center gap-0.5 rounded-xl border border-zinc-100 py-2 dark:border-zinc-900">
+          <div className="flex flex-col items-center justify-center gap-0.5 rounded-xl border border-zinc-100 py-2 dark:border-zinc-900">
             <span className="text-2xl font-bold text-black dark:text-white">—</span>
             <span className="text-xs font-medium text-black dark:text-white">Expected Real Returns</span>
             <span className="text-[10px] text-zinc-400">12-month outlook</span>
           </div>
-          <div className="flex flex-col items-center gap-0.5 rounded-xl border border-zinc-100 py-2 dark:border-zinc-900">
+          <div className="flex flex-col items-center justify-center gap-0.5 rounded-xl border border-zinc-100 py-2 dark:border-zinc-900">
             <span className="text-2xl font-bold text-black dark:text-white">—</span>
             <span className="text-xs font-medium text-black dark:text-white">Quality</span>
             <span className="text-[10px] text-zinc-400">fundamental health</span>
           </div>
-          <div className="flex flex-col items-center gap-0.5 rounded-xl border border-zinc-100 py-2 dark:border-zinc-900">
+          <div className="flex flex-col items-center justify-center gap-0.5 rounded-xl border border-zinc-100 py-2 dark:border-zinc-900">
             <span className="text-2xl font-bold text-black dark:text-white">—</span>
             <span className="text-xs font-medium text-black dark:text-white">Market Correlation</span>
             <span className="text-[10px] text-zinc-400">how you move with markets</span>
           </div>
-          <div className="flex flex-col items-center gap-0.5 rounded-xl border border-zinc-100 py-2 dark:border-zinc-900">
+          <div className="flex flex-col items-center justify-center gap-0.5 rounded-xl border border-zinc-100 py-2 dark:border-zinc-900">
             <span className="text-2xl font-bold text-black dark:text-white">—</span>
             <span className="text-xs font-medium text-black dark:text-white">Return on Risk</span>
             <span className="text-[10px] text-zinc-400">return per unit of risk</span>
           </div>
-          <div className="flex flex-col items-center gap-0.5 rounded-xl border border-zinc-100 py-2 dark:border-zinc-900">
+          <div className="flex flex-col items-center justify-center gap-0.5 rounded-xl border border-zinc-100 py-2 dark:border-zinc-900">
             <span className="text-2xl font-bold text-black dark:text-white">—</span>
             <span className="text-xs font-medium text-black dark:text-white">Edge on Market</span>
             <span className="text-[10px] text-zinc-400">return above the S&P 500</span>
           </div>
-          <div className="flex flex-col items-center gap-0.5 rounded-xl border border-zinc-100 py-2 dark:border-zinc-900">
+          <div className="flex flex-col items-center justify-center gap-0.5 rounded-xl border border-zinc-100 py-2 dark:border-zinc-900">
             <span className="text-2xl font-bold text-black dark:text-white">—</span>
             <span className="text-xs font-medium text-black dark:text-white">Expected Drawdown</span>
             <span className="text-[10px] text-zinc-400">worst-case projected drop</span>
           </div>
-          <div className="flex flex-col items-center gap-0.5 rounded-xl border border-zinc-100 py-2 dark:border-zinc-900">
+          <div className="flex flex-col items-center justify-center gap-0.5 rounded-xl border border-zinc-100 py-2 dark:border-zinc-900">
             <span className="text-2xl font-bold text-black dark:text-white">—</span>
             <span className="text-xs font-medium text-black dark:text-white">Historical Real Returns</span>
             <span className="text-[10px] text-zinc-400">past return after inflation</span>
