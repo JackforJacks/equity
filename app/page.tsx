@@ -2,10 +2,10 @@ export default function Home() {
   return (
     <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
       <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <h2 className="w-full text-7xl font-bold tracking-tight text-center" style={{ fontFamily: "var(--font-space-grotesk)" }}>
-          <span style={{ color: "#1D4ED8" }}>E</span><span style={{ color: "#059669" }}>quity</span>
+        <h2 className="w-full text-7xl font-bold tracking-tight text-center text-black dark:text-zinc-50" style={{ fontFamily: "var(--font-space-grotesk)" }}>
+          Equity
         </h2>
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
+        <div className="flex flex-col items-center gap-6 text-center">
           <h1 className="text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
             Stakeholder driven asset management
           </h1>
@@ -16,7 +16,7 @@ export default function Home() {
             Tokens are your voice, participate in board member appointments and shape the companies you invest in.
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
+        <div className="flex flex-col items-center gap-4 text-base font-medium w-full sm:flex-row sm:justify-center">
           <a
             className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
             href="/login"
