@@ -72,6 +72,7 @@ export default function Dashboard() {
       </div>
 
       <main className="flex flex-1 flex-col items-center px-8 py-6 overflow-hidden">
+        <div className="flex w-full max-w-md flex-col items-center rounded-xl border border-zinc-100 px-4 pt-4 pb-3 dark:border-zinc-900">
         <div className="relative w-full">
           <ResponsiveContainer width="100%" height={200}>
             <PieChart>
@@ -143,6 +144,7 @@ export default function Dashboard() {
             {total.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 2 })}
           </p>
         )}
+        </div>
 
         <div className="mt-4 grid w-full max-w-md grid-cols-2 gap-2">
           <div className="flex flex-col items-center gap-0.5 rounded-xl border border-zinc-100 py-2 dark:border-zinc-900">
