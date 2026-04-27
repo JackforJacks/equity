@@ -51,7 +51,7 @@ export default function Dashboard() {
   const isEmpty = segments === EMPTY;
 
   return (
-    <div className="flex flex-col flex-1 bg-white dark:bg-black">
+    <div className="flex flex-col flex-1 overflow-hidden bg-white dark:bg-black">
       <div className="fixed top-6 right-6 z-10" ref={menuRef}>
         <button
           onClick={() => setMenuOpen((v) => !v)}
@@ -71,9 +71,9 @@ export default function Dashboard() {
         )}
       </div>
 
-      <main className="flex flex-1 flex-col items-center px-8 py-16">
+      <main className="flex flex-1 flex-col items-center px-8 py-6 overflow-hidden">
         <div className="relative w-full">
-          <ResponsiveContainer width="100%" height={260}>
+          <ResponsiveContainer width="100%" height={200}>
             <PieChart>
               {/* Outer ring — individual holdings with gross value */}
               <Pie
@@ -84,8 +84,8 @@ export default function Dashboard() {
                 endAngle={0}
                 cx="50%"
                 cy="100%"
-                outerRadius={220}
-                innerRadius={185}
+                outerRadius={170}
+                innerRadius={142}
                 paddingAngle={holdingSegments === EMPTY ? 0 : 2}
                 fill="#e4e4e7"
               >
@@ -102,8 +102,8 @@ export default function Dashboard() {
                 endAngle={0}
                 cx="50%"
                 cy="100%"
-                outerRadius={185}
-                innerRadius={163}
+                outerRadius={142}
+                innerRadius={125}
                 paddingAngle={isEmpty ? 0 : 2}
                 fill="#e4e4e7"
               >
@@ -130,60 +130,60 @@ export default function Dashboard() {
 
           {pnl12m !== null && (
             <div className="absolute bottom-0 left-1/2 -translate-x-1/2 text-center">
-              <p className={`text-5xl font-bold ${pnl12m >= 0 ? "text-green-600" : "text-red-500"}`}>
+              <p className={`text-3xl font-bold ${pnl12m >= 0 ? "text-green-600" : "text-red-500"}`}>
                 {pnl12m >= 0 ? "+" : ""}{pnl12m.toFixed(2)}%
               </p>
-              <p className="text-xs text-zinc-400">in the last 12 months</p>
+              <p className="text-[10px] text-zinc-400">in the last 12 months</p>
             </div>
           )}
         </div>
 
         {total !== null && (
-          <p className="mt-2 text-5xl font-semibold text-black dark:text-white">
+          <p className="mt-1 text-3xl font-semibold text-black dark:text-white">
             {total.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 2 })}
           </p>
         )}
 
-        <div className="mt-12 grid w-full max-w-md grid-cols-2 gap-4">
-          <div className="flex flex-col items-center gap-1 rounded-2xl border border-zinc-100 py-6 dark:border-zinc-900">
-            <span className="text-5xl font-bold text-black dark:text-white">—</span>
-            <span className="text-sm font-medium text-black dark:text-white">Robustness</span>
-            <span className="text-xs text-zinc-400">safety + diversification</span>
+        <div className="mt-4 grid w-full max-w-md grid-cols-2 gap-2">
+          <div className="flex flex-col items-center gap-0.5 rounded-xl border border-zinc-100 py-2 dark:border-zinc-900">
+            <span className="text-2xl font-bold text-black dark:text-white">—</span>
+            <span className="text-xs font-medium text-black dark:text-white">Robustness</span>
+            <span className="text-[10px] text-zinc-400">safety + diversification</span>
           </div>
-          <div className="flex flex-col items-center gap-1 rounded-2xl border border-zinc-100 py-6 dark:border-zinc-900">
-            <span className="text-5xl font-bold text-black dark:text-white">—</span>
-            <span className="text-sm font-medium text-black dark:text-white">Expected Real Returns</span>
-            <span className="text-xs text-zinc-400">12-month outlook</span>
+          <div className="flex flex-col items-center gap-0.5 rounded-xl border border-zinc-100 py-2 dark:border-zinc-900">
+            <span className="text-2xl font-bold text-black dark:text-white">—</span>
+            <span className="text-xs font-medium text-black dark:text-white">Expected Real Returns</span>
+            <span className="text-[10px] text-zinc-400">12-month outlook</span>
           </div>
-          <div className="flex flex-col items-center gap-1 rounded-2xl border border-zinc-100 py-6 dark:border-zinc-900">
-            <span className="text-5xl font-bold text-black dark:text-white">—</span>
-            <span className="text-sm font-medium text-black dark:text-white">Quality</span>
-            <span className="text-xs text-zinc-400">fundamental health</span>
+          <div className="flex flex-col items-center gap-0.5 rounded-xl border border-zinc-100 py-2 dark:border-zinc-900">
+            <span className="text-2xl font-bold text-black dark:text-white">—</span>
+            <span className="text-xs font-medium text-black dark:text-white">Quality</span>
+            <span className="text-[10px] text-zinc-400">fundamental health</span>
           </div>
-          <div className="flex flex-col items-center gap-1 rounded-2xl border border-zinc-100 py-6 dark:border-zinc-900">
-            <span className="text-5xl font-bold text-black dark:text-white">—</span>
-            <span className="text-sm font-medium text-black dark:text-white">Market Correlation</span>
-            <span className="text-xs text-zinc-400">how you move with markets</span>
+          <div className="flex flex-col items-center gap-0.5 rounded-xl border border-zinc-100 py-2 dark:border-zinc-900">
+            <span className="text-2xl font-bold text-black dark:text-white">—</span>
+            <span className="text-xs font-medium text-black dark:text-white">Market Correlation</span>
+            <span className="text-[10px] text-zinc-400">how you move with markets</span>
           </div>
-          <div className="flex flex-col items-center gap-1 rounded-2xl border border-zinc-100 py-6 dark:border-zinc-900">
-            <span className="text-5xl font-bold text-black dark:text-white">—</span>
-            <span className="text-sm font-medium text-black dark:text-white">Return on Risk</span>
-            <span className="text-xs text-zinc-400">return per unit of risk</span>
+          <div className="flex flex-col items-center gap-0.5 rounded-xl border border-zinc-100 py-2 dark:border-zinc-900">
+            <span className="text-2xl font-bold text-black dark:text-white">—</span>
+            <span className="text-xs font-medium text-black dark:text-white">Return on Risk</span>
+            <span className="text-[10px] text-zinc-400">return per unit of risk</span>
           </div>
-          <div className="flex flex-col items-center gap-1 rounded-2xl border border-zinc-100 py-6 dark:border-zinc-900">
-            <span className="text-5xl font-bold text-black dark:text-white">—</span>
-            <span className="text-sm font-medium text-black dark:text-white">Edge on Market</span>
-            <span className="text-xs text-zinc-400">return above the S&P 500</span>
+          <div className="flex flex-col items-center gap-0.5 rounded-xl border border-zinc-100 py-2 dark:border-zinc-900">
+            <span className="text-2xl font-bold text-black dark:text-white">—</span>
+            <span className="text-xs font-medium text-black dark:text-white">Edge on Market</span>
+            <span className="text-[10px] text-zinc-400">return above the S&P 500</span>
           </div>
-          <div className="flex flex-col items-center gap-1 rounded-2xl border border-zinc-100 py-6 dark:border-zinc-900">
-            <span className="text-5xl font-bold text-black dark:text-white">—</span>
-            <span className="text-sm font-medium text-black dark:text-white">Expected Drawdown</span>
-            <span className="text-xs text-zinc-400">worst-case projected drop</span>
+          <div className="flex flex-col items-center gap-0.5 rounded-xl border border-zinc-100 py-2 dark:border-zinc-900">
+            <span className="text-2xl font-bold text-black dark:text-white">—</span>
+            <span className="text-xs font-medium text-black dark:text-white">Expected Drawdown</span>
+            <span className="text-[10px] text-zinc-400">worst-case projected drop</span>
           </div>
-          <div className="flex flex-col items-center gap-1 rounded-2xl border border-zinc-100 py-6 dark:border-zinc-900">
-            <span className="text-5xl font-bold text-black dark:text-white">—</span>
-            <span className="text-sm font-medium text-black dark:text-white">Historical Real Returns</span>
-            <span className="text-xs text-zinc-400">past return after inflation</span>
+          <div className="flex flex-col items-center gap-0.5 rounded-xl border border-zinc-100 py-2 dark:border-zinc-900">
+            <span className="text-2xl font-bold text-black dark:text-white">—</span>
+            <span className="text-xs font-medium text-black dark:text-white">Historical Real Returns</span>
+            <span className="text-[10px] text-zinc-400">past return after inflation</span>
           </div>
         </div>
       </main>
