@@ -143,6 +143,19 @@ export default function Dashboard() {
             {total.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 2 })}
           </p>
         )}
+
+        <div className="mt-12 flex w-full max-w-sm gap-4">
+          <div className="flex flex-1 flex-col items-center gap-1 rounded-2xl border border-zinc-100 py-6 dark:border-zinc-900">
+            <span className="text-5xl font-bold text-black dark:text-white">—</span>
+            <span className="text-sm font-medium text-black dark:text-white">Robustness</span>
+            <span className="text-xs text-zinc-400">safety + diversification</span>
+          </div>
+          <div className="flex flex-1 flex-col items-center gap-1 rounded-2xl border border-zinc-100 py-6 dark:border-zinc-900">
+            <span className="text-5xl font-bold text-black dark:text-white">—</span>
+            <span className="text-sm font-medium text-black dark:text-white">Expected Growth</span>
+            <span className="text-xs text-zinc-400">12-month outlook</span>
+          </div>
+        </div>
       </main>
 
       <button className="fixed bottom-6 right-6 flex h-14 w-14 items-center justify-center rounded-full bg-black text-white shadow-lg transition-colors hover:bg-zinc-800 dark:bg-white dark:text-black dark:hover:bg-zinc-200">
