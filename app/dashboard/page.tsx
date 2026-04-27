@@ -72,8 +72,14 @@ export default function Dashboard() {
               ))}
             </Pie>
             <Tooltip
-              formatter={(value, name) => [`${value}%`, name]}
-              contentStyle={{ borderRadius: "8px", border: "1px solid #e4e4e7", fontSize: "13px" }}
+              content={({ active, payload }) => {
+                if (!active || !payload?.length || payload[0].name === "Empty") return null;
+                return (
+                  <div style={{ borderRadius: "8px", border: "1px solid #e4e4e7", background: "#fff", padding: "6px 12px", fontSize: "13px" }}>
+                    {payload[0].name}: {payload[0].value}%
+                  </div>
+                );
+              }}
             />
           </PieChart>
         </ResponsiveContainer>
