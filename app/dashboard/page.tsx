@@ -27,8 +27,7 @@ export default function Dashboard() {
 
   return (
     <div className="flex flex-col flex-1 bg-white dark:bg-black">
-      <header className="flex items-center justify-between px-8 py-6 border-b border-zinc-100 dark:border-zinc-900">
-        <span className="text-xl font-bold text-black dark:text-white">Equity</span>
+      <header className="flex items-center justify-end px-8 py-6 border-b border-zinc-100 dark:border-zinc-900">
         <div className="relative" ref={menuRef}>
           <button
             onClick={() => setMenuOpen((v) => !v)}
@@ -49,7 +48,6 @@ export default function Dashboard() {
         </div>
       </header>
       <main className="flex flex-1 flex-col gap-8 px-8 py-10">
-        <h1 className="text-2xl font-semibold text-black dark:text-white">Dashboard</h1>
       </main>
     </div>
   );
