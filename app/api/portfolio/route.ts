@@ -53,34 +53,48 @@ export async function GET() {
   });
   const figiData: { data?: { ticker: string; exchCode: string }[] }[] = await figiRes.json();
 
-  // 2 — Fetch current price from Yahoo Finance for each ticker
-  const prices = await Promise.all(
+  // 2 — Fetch 1-year historical data from Yahoo Finance (gives current + year-ago price in one call)
+  const priceData = await Promise.all(
     figiData.map(async (result) => {
       const item = result.data?.[0];
-      if (!item?.ticker) return null;
+      if (!item?.ticker) return { current: null, yearAgo: null };
       const symbol = yahooTicker(item.ticker, item.exchCode);
       try {
         const res = await fetch(
-          `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=1d`,
+          `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=1y`,
           { headers: { "User-Agent": "Mozilla/5.0", "Accept": "application/json" } }
         );
         const json = await res.json();
-        return json.chart?.result?.[0]?.meta?.regularMarketPrice ?? null;
+        const result = json.chart?.result?.[0];
+        const closes = result?.indicators?.quote?.[0]?.close ?? [];
+        return {
+          current: result?.meta?.regularMarketPrice ?? null,
+          yearAgo: closes.find((v: number | null) => v != null) ?? null,
+        };
       } catch {
-        return null;
+        return { current: null, yearAgo: null };
       }
     })
   );
 
-  // 3 — Aggregate gross value by type
+  // 3 — Aggregate gross value by type + compute 12-month P&L
   const typeValues: Record<string, number> = {};
+  let currentTotal = 0;
+  let yearAgoTotal = 0;
+
   holdings.forEach((holding, i) => {
-    const price = prices[i];
-    if (price == null) return;
-    typeValues[holding.type] = (typeValues[holding.type] ?? 0) + holding.quantity * price;
+    const { current, yearAgo } = priceData[i];
+    if (current != null) {
+      const v = holding.quantity * current;
+      typeValues[holding.type] = (typeValues[holding.type] ?? 0) + v;
+      currentTotal += v;
+    }
+    if (yearAgo != null) {
+      yearAgoTotal += holding.quantity * yearAgo;
+    }
   });
 
-  const total = Object.values(typeValues).reduce((a, b) => a + b, 0);
+  const total = currentTotal;
   if (total === 0) return NextResponse.json([]);
 
   const segments = Object.entries(typeValues).map(([type, value]) => ({
@@ -89,5 +103,9 @@ export async function GET() {
     color: TYPE_COLORS[type] ?? TYPE_COLORS.Other,
   }));
 
-  return NextResponse.json({ segments, total });
+  const pnl12m = yearAgoTotal > 0
+    ? parseFloat((((currentTotal - yearAgoTotal) / yearAgoTotal) * 100).toFixed(2))
+    : null;
+
+  return NextResponse.json({ segments, total, pnl12m });
 }

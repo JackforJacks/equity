@@ -14,15 +14,17 @@ export default function Dashboard() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [segments, setSegments] = useState<Segment[]>(EMPTY);
   const [total, setTotal] = useState<number | null>(null);
+  const [pnl12m, setPnl12m] = useState<number | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetch("/api/portfolio")
       .then((r) => r.json())
-      .then((data: { segments: Segment[]; total: number }) => {
+      .then((data: { segments: Segment[]; total: number; pnl12m: number | null }) => {
         if (data.segments?.length > 0) {
           setSegments(data.segments);
           setTotal(data.total);
+          setPnl12m(data.pnl12m ?? null);
         }
       })
       .catch(() => {});
@@ -68,37 +70,48 @@ export default function Dashboard() {
       </div>
 
       <main className="flex flex-1 flex-col items-center px-8 py-16">
-        <ResponsiveContainer width="100%" height={260}>
-          <PieChart>
-            <Pie
-              data={segments}
-              dataKey="value"
-              nameKey="label"
-              startAngle={180}
-              endAngle={0}
-              cx="50%"
-              cy="100%"
-              outerRadius={220}
-              innerRadius={130}
-              paddingAngle={isEmpty ? 0 : 2}
-              fill="#e4e4e7"
-            >
-              {segments.map((s) => (
-                <Cell key={s.label} fill={s.color} />
-              ))}
-            </Pie>
-            <Tooltip
-              content={({ active, payload }) => {
-                if (!active || !payload?.length || payload[0].name === "Empty") return null;
-                return (
-                  <div style={{ borderRadius: "8px", border: "1px solid #e4e4e7", background: "#fff", padding: "6px 12px", fontSize: "13px" }}>
-                    {payload[0].name}: {payload[0].value}%
-                  </div>
-                );
-              }}
-            />
-          </PieChart>
-        </ResponsiveContainer>
+        <div className="relative w-full">
+          <ResponsiveContainer width="100%" height={260}>
+            <PieChart>
+              <Pie
+                data={segments}
+                dataKey="value"
+                nameKey="label"
+                startAngle={180}
+                endAngle={0}
+                cx="50%"
+                cy="100%"
+                outerRadius={220}
+                innerRadius={130}
+                paddingAngle={isEmpty ? 0 : 2}
+                fill="#e4e4e7"
+              >
+                {segments.map((s) => (
+                  <Cell key={s.label} fill={s.color} />
+                ))}
+              </Pie>
+              <Tooltip
+                content={({ active, payload }) => {
+                  if (!active || !payload?.length || payload[0].name === "Empty") return null;
+                  return (
+                    <div style={{ borderRadius: "8px", border: "1px solid #e4e4e7", background: "#fff", padding: "6px 12px", fontSize: "13px" }}>
+                      {payload[0].name}: {payload[0].value}%
+                    </div>
+                  );
+                }}
+              />
+            </PieChart>
+          </ResponsiveContainer>
+
+          {pnl12m !== null && (
+            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 text-center">
+              <p className={`text-2xl font-bold ${pnl12m >= 0 ? "text-green-600" : "text-red-500"}`}>
+                {pnl12m >= 0 ? "+" : ""}{pnl12m.toFixed(2)}%
+              </p>
+              <p className="text-xs text-zinc-400">in the last 12 months</p>
+            </div>
+          )}
+        </div>
 
         {total !== null && (
           <p className="mt-2 text-2xl font-semibold text-black dark:text-white">
