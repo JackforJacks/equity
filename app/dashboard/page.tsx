@@ -144,16 +144,26 @@ export default function Dashboard() {
           </p>
         )}
 
-        <div className="mt-12 flex w-full max-w-sm gap-4">
-          <div className="flex flex-1 flex-col items-center gap-1 rounded-2xl border border-zinc-100 py-6 dark:border-zinc-900">
+        <div className="mt-12 grid w-full max-w-md grid-cols-2 gap-4">
+          <div className="flex flex-col items-center gap-1 rounded-2xl border border-zinc-100 py-6 dark:border-zinc-900">
             <span className="text-5xl font-bold text-black dark:text-white">—</span>
             <span className="text-sm font-medium text-black dark:text-white">Robustness</span>
             <span className="text-xs text-zinc-400">safety + diversification</span>
           </div>
-          <div className="flex flex-1 flex-col items-center gap-1 rounded-2xl border border-zinc-100 py-6 dark:border-zinc-900">
+          <div className="flex flex-col items-center gap-1 rounded-2xl border border-zinc-100 py-6 dark:border-zinc-900">
             <span className="text-5xl font-bold text-black dark:text-white">—</span>
             <span className="text-sm font-medium text-black dark:text-white">Potential Growth</span>
             <span className="text-xs text-zinc-400">12-month outlook</span>
+          </div>
+          <div className="flex flex-col items-center gap-1 rounded-2xl border border-zinc-100 py-6 dark:border-zinc-900">
+            <span className="text-5xl font-bold text-black dark:text-white">—</span>
+            <span className="text-sm font-medium text-black dark:text-white">Quality</span>
+            <span className="text-xs text-zinc-400">fundamental health</span>
+          </div>
+          <div className="flex flex-col items-center gap-1 rounded-2xl border border-zinc-100 py-6 dark:border-zinc-900">
+            <span className="text-5xl font-bold text-black dark:text-white">—</span>
+            <span className="text-sm font-medium text-black dark:text-white">Market Correlation</span>
+            <span className="text-xs text-zinc-400">how you move with markets</span>
           </div>
         </div>
       </main>
