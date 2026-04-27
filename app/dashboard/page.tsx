@@ -105,7 +105,7 @@ export default function Dashboard() {
 
           {pnl12m !== null && (
             <div className="absolute bottom-0 left-1/2 -translate-x-1/2 text-center">
-              <p className={`text-2xl font-bold ${pnl12m >= 0 ? "text-green-600" : "text-red-500"}`}>
+              <p className={`text-5xl font-bold ${pnl12m >= 0 ? "text-green-600" : "text-red-500"}`}>
                 {pnl12m >= 0 ? "+" : ""}{pnl12m.toFixed(2)}%
               </p>
               <p className="text-xs text-zinc-400">in the last 12 months</p>
@@ -114,7 +114,7 @@ export default function Dashboard() {
         </div>
 
         {total !== null && (
-          <p className="mt-2 text-2xl font-semibold text-black dark:text-white">
+          <p className="mt-2 text-5xl font-semibold text-black dark:text-white">
             {total.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 2 })}
           </p>
         )}
