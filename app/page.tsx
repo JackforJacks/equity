@@ -6,13 +6,13 @@ export default function Home() {
           Equity
         </h2>
         <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
+          <h1 className="text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
             Stakeholder driven asset management
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
+          <p className="text-lg leading-8 text-zinc-600 dark:text-zinc-400">
             Tired of gimmicky or bloated financial platforms? Equity gives you a simple, AI-powered tool to build a performing portfolio tailored to your needs, starting from one cent thanks to asset tokenization.
           </p>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
+          <p className="text-lg leading-8 text-zinc-600 dark:text-zinc-400">
             Tokens are your voice, participate in board member appointments and shape the companies you invest in.
           </p>
         </div>
