@@ -72,21 +72,11 @@ export default function Dashboard() {
               ))}
             </Pie>
             <Tooltip
-              formatter={(value) => [`${value}%`, ""]}
+              formatter={(value, name) => [`${value}%`, name]}
               contentStyle={{ borderRadius: "8px", border: "1px solid #e4e4e7", fontSize: "13px" }}
             />
           </PieChart>
         </ResponsiveContainer>
-
-        <div className="flex flex-wrap justify-center gap-x-6 gap-y-2">
-          {portfolioData.map((d) => (
-            <div key={d.label} className="flex items-center gap-2">
-              <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: d.color }} />
-              <span className="text-sm text-zinc-600 dark:text-zinc-400">{d.label}</span>
-              <span className="text-sm font-medium text-black dark:text-white">{d.value}%</span>
-            </div>
-          ))}
-        </div>
       </main>
 
       <button className="fixed bottom-6 right-6 flex h-14 w-14 items-center justify-center rounded-full bg-black text-white shadow-lg transition-colors hover:bg-zinc-800 dark:bg-white dark:text-black dark:hover:bg-zinc-200">
