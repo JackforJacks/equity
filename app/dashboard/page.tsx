@@ -71,8 +71,9 @@ export default function Dashboard() {
         )}
       </div>
 
-      <main className="flex flex-1 flex-row items-stretch gap-4 px-8 py-6 overflow-hidden">
-        <div className="flex w-1/3 flex-col items-center justify-center rounded-xl border border-zinc-100 px-4 py-4 dark:border-zinc-900">
+      <main className="flex flex-1 flex-col items-center px-8 py-6 overflow-hidden">
+       <div className="flex h-full w-1/3 flex-col gap-2">
+        <div className="flex flex-col items-center justify-center rounded-xl border border-zinc-100 px-4 py-4 dark:border-zinc-900">
         <div className="relative w-full">
           <ResponsiveContainer width="100%" height={220}>
             <PieChart>
@@ -188,6 +189,7 @@ export default function Dashboard() {
             <span className="text-[10px] text-zinc-400">past return after inflation</span>
           </div>
         </div>
+       </div>
       </main>
 
       <button className="fixed bottom-6 right-6 flex h-14 w-14 items-center justify-center rounded-full bg-black text-white shadow-lg transition-colors hover:bg-zinc-800 dark:bg-white dark:text-black dark:hover:bg-zinc-200">
