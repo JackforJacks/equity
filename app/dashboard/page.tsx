@@ -1,0 +1,56 @@
+"use client";
+
+import { useState, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase";
+
+export default function Dashboard() {
+  const router = useRouter();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  async function handleLogout() {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push("/");
+  }
+
+  return (
+    <div className="flex flex-col flex-1 bg-white dark:bg-black">
+      <header className="flex items-center justify-between px-8 py-6 border-b border-zinc-100 dark:border-zinc-900">
+        <span className="text-xl font-bold text-black dark:text-white">Equity</span>
+        <div className="relative" ref={menuRef}>
+          <button
+            onClick={() => setMenuOpen((v) => !v)}
+            className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-black text-black transition-colors hover:bg-zinc-100 dark:border-white dark:text-white dark:hover:bg-zinc-900"
+          >
+            <span className="text-lg leading-none tracking-tighter">···</span>
+          </button>
+          {menuOpen && (
+            <div className="absolute right-0 mt-2 w-40 rounded-xl border border-zinc-200 bg-white py-1 shadow-md dark:border-zinc-800 dark:bg-zinc-950">
+              <button
+                onClick={handleLogout}
+                className="w-full px-4 py-2.5 text-left text-sm text-red-500 transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-900"
+              >
+                Log out
+              </button>
+            </div>
+          )}
+        </div>
+      </header>
+      <main className="flex flex-1 flex-col gap-8 px-8 py-10">
+        <h1 className="text-2xl font-semibold text-black dark:text-white">Dashboard</h1>
+      </main>
+    </div>
+  );
+}
