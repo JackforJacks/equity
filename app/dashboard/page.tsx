@@ -27,7 +27,7 @@ export default function Dashboard() {
 
   return (
     <div className="flex flex-col flex-1 bg-white dark:bg-black">
-      <header className="flex items-center justify-end px-8 py-6 border-b border-zinc-100 dark:border-zinc-900">
+      <header className="flex items-center justify-end px-8 py-6">
         <div className="relative" ref={menuRef}>
           <button
             onClick={() => setMenuOpen((v) => !v)}
