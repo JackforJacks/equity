@@ -110,6 +110,7 @@ export async function GET() {
     return {
       label: figiData[i]?.data?.[0]?.ticker ?? holding.isin,
       value: Math.round((v / total) * 100),
+      grossValue: parseFloat(v.toFixed(2)),
       color: TYPE_COLORS[holding.type] ?? TYPE_COLORS.Other,
     };
   }).filter(Boolean);

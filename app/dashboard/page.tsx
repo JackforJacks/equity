@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 
-type Segment = { label: string; value: number; color: string };
+type Segment = { label: string; value: number; color: string; grossValue?: number };
 
 const EMPTY: Segment[] = [{ label: "Empty", value: 100, color: "#e4e4e7" }];
 
@@ -75,25 +75,7 @@ export default function Dashboard() {
         <div className="relative w-full">
           <ResponsiveContainer width="100%" height={260}>
             <PieChart>
-              {/* Outer ring — asset types */}
-              <Pie
-                data={segments}
-                dataKey="value"
-                nameKey="label"
-                startAngle={180}
-                endAngle={0}
-                cx="50%"
-                cy="100%"
-                outerRadius={220}
-                innerRadius={198}
-                paddingAngle={isEmpty ? 0 : 2}
-                fill="#e4e4e7"
-              >
-                {segments.map((s) => (
-                  <Cell key={s.label} fill={s.color} />
-                ))}
-              </Pie>
-              {/* Inner ring — individual holdings */}
+              {/* Outer ring — individual holdings with gross value */}
               <Pie
                 data={holdingSegments}
                 dataKey="value"
@@ -102,8 +84,8 @@ export default function Dashboard() {
                 endAngle={0}
                 cx="50%"
                 cy="100%"
-                outerRadius={185}
-                innerRadius={163}
+                outerRadius={220}
+                innerRadius={198}
                 paddingAngle={holdingSegments === EMPTY ? 0 : 2}
                 fill="#e4e4e7"
               >
@@ -111,12 +93,34 @@ export default function Dashboard() {
                   <Cell key={s.label} fill={s.color} />
                 ))}
               </Pie>
+              {/* Inner ring — asset types with percentage */}
+              <Pie
+                data={segments}
+                dataKey="value"
+                nameKey="label"
+                startAngle={180}
+                endAngle={0}
+                cx="50%"
+                cy="100%"
+                outerRadius={185}
+                innerRadius={163}
+                paddingAngle={isEmpty ? 0 : 2}
+                fill="#e4e4e7"
+              >
+                {segments.map((s) => (
+                  <Cell key={s.label} fill={s.color} />
+                ))}
+              </Pie>
               <Tooltip
                 content={({ active, payload }) => {
                   if (!active || !payload?.length || payload[0].name === "Empty") return null;
+                  const seg = payload[0].payload as Segment;
+                  const detail = seg.grossValue != null
+                    ? `$${seg.grossValue.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                    : `${payload[0].value}%`;
                   return (
                     <div style={{ borderRadius: "8px", border: "1px solid #e4e4e7", background: "#fff", padding: "6px 12px", fontSize: "13px" }}>
-                      {payload[0].name}: {payload[0].value}%
+                      {payload[0].name}: {detail}
                     </div>
                   );
                 }}
