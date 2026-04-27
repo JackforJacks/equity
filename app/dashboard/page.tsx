@@ -6,14 +6,22 @@ import { createClient } from "@/lib/supabase";
 import { ChatCircleText } from "@phosphor-icons/react";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 
-const portfolioData = [
-  { label: "Empty", value: 100, color: "#e4e4e7" },
-];
+type Segment = { label: string; value: number; color: string };
+
+const EMPTY: Segment[] = [{ label: "Empty", value: 100, color: "#e4e4e7" }];
 
 export default function Dashboard() {
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [segments, setSegments] = useState<Segment[]>(EMPTY);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    fetch("/api/portfolio")
+      .then((r) => r.json())
+      .then((data: Segment[]) => { if (data.length > 0) setSegments(data); })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -30,6 +38,8 @@ export default function Dashboard() {
     await supabase.auth.signOut();
     router.push("/");
   }
+
+  const isEmpty = segments === EMPTY;
 
   return (
     <div className="flex flex-col flex-1 bg-white dark:bg-black">
@@ -56,7 +66,7 @@ export default function Dashboard() {
         <ResponsiveContainer width="100%" height={260}>
           <PieChart>
             <Pie
-              data={portfolioData}
+              data={segments}
               dataKey="value"
               nameKey="label"
               startAngle={180}
@@ -65,10 +75,10 @@ export default function Dashboard() {
               cy="100%"
               outerRadius={220}
               innerRadius={130}
-              paddingAngle={2}
+              paddingAngle={isEmpty ? 0 : 2}
             >
-              {portfolioData.map((entry) => (
-                <Cell key={entry.label} fill={entry.color} />
+              {segments.map((s) => (
+                <Cell key={s.label} fill={s.color} />
               ))}
             </Pie>
             <Tooltip
