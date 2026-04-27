@@ -167,8 +167,8 @@ export default function Dashboard() {
           </div>
           <div className="col-span-2 flex flex-col items-center gap-1 rounded-2xl border border-zinc-100 py-6 dark:border-zinc-900">
             <span className="text-5xl font-bold text-black dark:text-white">—</span>
-            <span className="text-sm font-medium text-black dark:text-white">Projected Real Return</span>
-            <span className="text-xs text-zinc-400">expected return after inflation</span>
+            <span className="text-sm font-medium text-black dark:text-white">Historical Real Returns</span>
+            <span className="text-xs text-zinc-400">past return after inflation</span>
           </div>
         </div>
       </main>
