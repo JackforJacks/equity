@@ -75,7 +75,7 @@ export default function Dashboard() {
               ))}
             </Pie>
             <Tooltip
-              formatter={(value: number) => [`${value}%`, ""]}
+              formatter={(value) => [`${value}%`, ""]}
               contentStyle={{ borderRadius: "8px", border: "1px solid #e4e4e7", fontSize: "13px" }}
             />
           </PieChart>
