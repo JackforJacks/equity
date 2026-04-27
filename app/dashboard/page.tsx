@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
+import { ChatsCircle } from "@phosphor-icons/react";
 
 export default function Dashboard() {
   const router = useRouter();
@@ -49,6 +50,9 @@ export default function Dashboard() {
       </header>
       <main className="flex flex-1 flex-col gap-8 px-8 py-10">
       </main>
+      <button className="fixed bottom-6 right-6 flex h-14 w-14 items-center justify-center rounded-full bg-black text-white shadow-lg transition-colors hover:bg-zinc-800 dark:bg-white dark:text-black dark:hover:bg-zinc-200">
+        <ChatsCircle size={28} weight="fill" />
+      </button>
     </div>
   );
 }
