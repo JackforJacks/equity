@@ -71,10 +71,10 @@ export default function Dashboard() {
         )}
       </div>
 
-      <main className="flex flex-1 flex-col items-center px-8 py-6 overflow-hidden">
-        <div className="flex w-full max-w-md flex-col items-center rounded-xl border border-zinc-100 px-4 pt-4 pb-3 dark:border-zinc-900">
+      <main className="flex flex-1 flex-row items-stretch gap-4 px-8 py-6 overflow-hidden">
+        <div className="flex w-1/3 flex-col items-center justify-center rounded-xl border border-zinc-100 px-4 py-4 dark:border-zinc-900">
         <div className="relative w-full">
-          <ResponsiveContainer width="100%" height={200}>
+          <ResponsiveContainer width="100%" height={220}>
             <PieChart>
               {/* Outer ring — individual holdings with gross value */}
               <Pie
@@ -85,8 +85,8 @@ export default function Dashboard() {
                 endAngle={0}
                 cx="50%"
                 cy="100%"
-                outerRadius={170}
-                innerRadius={142}
+                outerRadius="95%"
+                innerRadius="80%"
                 paddingAngle={holdingSegments === EMPTY ? 0 : 2}
                 fill="#e4e4e7"
               >
@@ -103,8 +103,8 @@ export default function Dashboard() {
                 endAngle={0}
                 cx="50%"
                 cy="100%"
-                outerRadius={142}
-                innerRadius={125}
+                outerRadius="78%"
+                innerRadius="65%"
                 paddingAngle={isEmpty ? 0 : 2}
                 fill="#e4e4e7"
               >
@@ -146,7 +146,7 @@ export default function Dashboard() {
         )}
         </div>
 
-        <div className="mt-4 grid w-full max-w-md grid-cols-2 gap-2">
+        <div className="grid flex-1 grid-cols-2 gap-2 content-start">
           <div className="flex flex-col items-center gap-0.5 rounded-xl border border-zinc-100 py-2 dark:border-zinc-900">
             <span className="text-2xl font-bold text-black dark:text-white">—</span>
             <span className="text-xs font-medium text-black dark:text-white">Robustness</span>
