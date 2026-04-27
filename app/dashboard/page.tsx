@@ -72,7 +72,7 @@ export default function Dashboard() {
       </div>
 
       <main className="flex flex-1 flex-col items-center px-8 py-6 overflow-hidden">
-       <div className="flex h-full w-1/3 flex-col gap-2">
+       <div className="flex h-full w-1/3 min-h-0 flex-col gap-2">
         <div className="flex flex-col items-center justify-center rounded-xl border border-zinc-100 px-4 py-4 dark:border-zinc-900">
         <div className="relative w-full">
           <ResponsiveContainer width="100%" height={220}>
@@ -147,7 +147,7 @@ export default function Dashboard() {
         )}
         </div>
 
-        <div className="grid flex-1 grid-cols-2 grid-rows-4 gap-2">
+        <div className="grid flex-1 min-h-0 grid-cols-2 [grid-template-rows:repeat(4,minmax(0,1fr))] gap-2">
           <div className="flex flex-col items-center justify-center gap-0.5 rounded-xl border border-zinc-100 py-2 dark:border-zinc-900">
             <span className="text-2xl font-bold text-black dark:text-white">—</span>
             <span className="text-xs font-medium text-black dark:text-white">Robustness</span>
