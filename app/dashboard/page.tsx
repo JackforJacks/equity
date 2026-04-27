@@ -13,6 +13,7 @@ export default function Dashboard() {
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const [segments, setSegments] = useState<Segment[]>(EMPTY);
+  const [holdingSegments, setHoldingSegments] = useState<Segment[]>(EMPTY);
   const [total, setTotal] = useState<number | null>(null);
   const [pnl12m, setPnl12m] = useState<number | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -20,9 +21,10 @@ export default function Dashboard() {
   useEffect(() => {
     fetch("/api/portfolio")
       .then((r) => r.json())
-      .then((data: { segments: Segment[]; total: number; pnl12m: number | null }) => {
+      .then((data: { segments: Segment[]; holdings: Segment[]; total: number; pnl12m: number | null }) => {
         if (data.segments?.length > 0) {
           setSegments(data.segments);
+          setHoldingSegments(data.holdings?.length > 0 ? data.holdings : EMPTY);
           setTotal(data.total);
           setPnl12m(data.pnl12m ?? null);
         }
@@ -73,6 +75,7 @@ export default function Dashboard() {
         <div className="relative w-full">
           <ResponsiveContainer width="100%" height={260}>
             <PieChart>
+              {/* Outer ring — asset types */}
               <Pie
                 data={segments}
                 dataKey="value"
@@ -82,11 +85,29 @@ export default function Dashboard() {
                 cx="50%"
                 cy="100%"
                 outerRadius={220}
-                innerRadius={130}
+                innerRadius={198}
                 paddingAngle={isEmpty ? 0 : 2}
                 fill="#e4e4e7"
               >
                 {segments.map((s) => (
+                  <Cell key={s.label} fill={s.color} />
+                ))}
+              </Pie>
+              {/* Inner ring — individual holdings */}
+              <Pie
+                data={holdingSegments}
+                dataKey="value"
+                nameKey="label"
+                startAngle={180}
+                endAngle={0}
+                cx="50%"
+                cy="100%"
+                outerRadius={185}
+                innerRadius={163}
+                paddingAngle={holdingSegments === EMPTY ? 0 : 2}
+                fill="#e4e4e7"
+              >
+                {holdingSegments.map((s) => (
                   <Cell key={s.label} fill={s.color} />
                 ))}
               </Pie>

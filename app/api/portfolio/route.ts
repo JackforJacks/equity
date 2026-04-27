@@ -103,9 +103,20 @@ export async function GET() {
     color: TYPE_COLORS[type] ?? TYPE_COLORS.Other,
   }));
 
+  const holdingSegments = holdings.map((holding, i) => {
+    const { current } = priceData[i];
+    if (current == null) return null;
+    const v = holding.quantity * current;
+    return {
+      label: figiData[i]?.data?.[0]?.ticker ?? holding.isin,
+      value: Math.round((v / total) * 100),
+      color: TYPE_COLORS[holding.type] ?? TYPE_COLORS.Other,
+    };
+  }).filter(Boolean);
+
   const pnl12m = yearAgoTotal > 0
     ? parseFloat((((currentTotal - yearAgoTotal) / yearAgoTotal) * 100).toFixed(2))
     : null;
 
-  return NextResponse.json({ segments, total, pnl12m });
+  return NextResponse.json({ segments, holdings: holdingSegments, total, pnl12m });
 }
