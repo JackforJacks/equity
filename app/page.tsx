@@ -10,7 +10,10 @@ export default function Home() {
             Stakeholder driven asset management
           </h1>
           <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            AI assisted wealth management of tokenized assets.
+            Tired of gimmicky or bloated financial platforms? Equity gives you a simple, AI-powered tool to build a performing portfolio tailored to your needs, starting from one cent thanks to asset tokenization.
+          </p>
+          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
+            Tokens are your voice, participate in board member appointments and shape the companies you invest in.
           </p>
         </div>
         <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
