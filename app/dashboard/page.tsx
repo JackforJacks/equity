@@ -245,7 +245,6 @@ export default function Dashboard() {
             <span className="text-[10px] text-zinc-400">return per unit of risk</span>
           </div>
           <div className="flex flex-col items-center justify-center gap-0.5 rounded-xl border-2 border-zinc-900 py-2 dark:border-zinc-700">
-            <span className="text-2xl font-bold text-black dark:text-white">—</span>
             <span className={`text-2xl font-bold ${edgeOnBenchmark === null ? "text-black dark:text-white" : edgeOnBenchmark >= 0 ? "text-green-600" : "text-red-500"}`}>
               {edgeOnBenchmark === null ? "—" : `${edgeOnBenchmark >= 0 ? "+" : ""}${edgeOnBenchmark.toFixed(2)}%`}
             </span>
