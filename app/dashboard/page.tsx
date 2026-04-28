@@ -12,6 +12,7 @@ const EMPTY: Segment[] = [{ label: "Empty", value: 100, color: "#e4e4e7" }];
 export default function Dashboard() {
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [currency, setCurrency] = useState("EUR");
   const [segments, setSegments] = useState<Segment[]>(EMPTY);
   const [holdingSegments, setHoldingSegments] = useState<Segment[]>(EMPTY);
   const [total, setTotal] = useState<number | null>(null);
@@ -77,10 +78,36 @@ export default function Dashboard() {
           <span className="text-lg leading-none tracking-tighter">···</span>
         </button>
         {menuOpen && (
-          <div className="absolute right-0 mt-2 w-40 rounded-xl border border-zinc-200 bg-white py-1 shadow-md dark:border-zinc-800 dark:bg-zinc-950">
+          <div className="absolute right-0 mt-2 w-56 rounded-xl border border-zinc-200 bg-white py-2 shadow-md dark:border-zinc-800 dark:bg-zinc-950">
+            <div className="px-4 py-2 flex flex-col gap-3">
+              <div className="flex flex-col gap-1">
+                <span className="text-[10px] font-medium uppercase tracking-wider text-zinc-400">Language</span>
+                <select className="w-full rounded-lg border border-zinc-200 bg-white px-2 py-1.5 text-sm text-black outline-none dark:border-zinc-700 dark:bg-zinc-900 dark:text-white">
+                  <option>English</option>
+                </select>
+              </div>
+              <div className="flex flex-col gap-1">
+                <span className="text-[10px] font-medium uppercase tracking-wider text-zinc-400">Currency</span>
+                <select
+                  value={currency}
+                  onChange={(e) => setCurrency(e.target.value)}
+                  className="w-full rounded-lg border border-zinc-200 bg-white px-2 py-1.5 text-sm text-black outline-none dark:border-zinc-700 dark:bg-zinc-900 dark:text-white"
+                >
+                  <option>EUR</option>
+                  <option>USD</option>
+                </select>
+              </div>
+              <div className="flex flex-col gap-1">
+                <span className="text-[10px] font-medium uppercase tracking-wider text-zinc-400">Country</span>
+                <select className="w-full rounded-lg border border-zinc-200 bg-white px-2 py-1.5 text-sm text-black outline-none dark:border-zinc-700 dark:bg-zinc-900 dark:text-white">
+                  <option>Italy</option>
+                </select>
+              </div>
+            </div>
+            <div className="mx-4 my-2 h-px bg-zinc-100 dark:bg-zinc-800" />
             <button
               onClick={handleLogout}
-              className="w-full px-4 py-2.5 text-left text-sm text-red-500 transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-900"
+              className="w-full px-4 py-2 text-left text-sm text-red-500 transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-900"
             >
               Log out
             </button>
