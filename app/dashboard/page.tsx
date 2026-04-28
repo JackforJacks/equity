@@ -79,27 +79,27 @@ export default function Dashboard() {
         </button>
         {menuOpen && (
           <div className="absolute right-0 mt-2 w-56 rounded-xl border border-zinc-200 bg-white py-2 shadow-md dark:border-zinc-800 dark:bg-zinc-950">
-            <div className="px-4 py-2 flex flex-col gap-3">
-              <div className="flex flex-col gap-1">
-                <span className="text-[10px] font-medium uppercase tracking-wider text-zinc-400">Language</span>
-                <select className="w-full rounded-lg border border-zinc-200 bg-white px-2 py-1.5 text-sm text-black outline-none dark:border-zinc-700 dark:bg-zinc-900 dark:text-white">
+            <div className="px-4 py-2 flex flex-col gap-2">
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-sm text-zinc-600 dark:text-zinc-400">Language</span>
+                <select className="rounded-lg border border-zinc-200 bg-white px-2 py-1 text-sm text-black outline-none dark:border-zinc-700 dark:bg-zinc-900 dark:text-white">
                   <option>English</option>
                 </select>
               </div>
-              <div className="flex flex-col gap-1">
-                <span className="text-[10px] font-medium uppercase tracking-wider text-zinc-400">Currency</span>
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-sm text-zinc-600 dark:text-zinc-400">Currency</span>
                 <select
                   value={currency}
                   onChange={(e) => setCurrency(e.target.value)}
-                  className="w-full rounded-lg border border-zinc-200 bg-white px-2 py-1.5 text-sm text-black outline-none dark:border-zinc-700 dark:bg-zinc-900 dark:text-white"
+                  className="rounded-lg border border-zinc-200 bg-white px-2 py-1 text-sm text-black outline-none dark:border-zinc-700 dark:bg-zinc-900 dark:text-white"
                 >
                   <option>EUR</option>
                   <option>USD</option>
                 </select>
               </div>
-              <div className="flex flex-col gap-1">
-                <span className="text-[10px] font-medium uppercase tracking-wider text-zinc-400">Country</span>
-                <select className="w-full rounded-lg border border-zinc-200 bg-white px-2 py-1.5 text-sm text-black outline-none dark:border-zinc-700 dark:bg-zinc-900 dark:text-white">
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-sm text-zinc-600 dark:text-zinc-400">Country</span>
+                <select className="rounded-lg border border-zinc-200 bg-white px-2 py-1 text-sm text-black outline-none dark:border-zinc-700 dark:bg-zinc-900 dark:text-white">
                   <option>Italy</option>
                 </select>
               </div>
