@@ -72,7 +72,8 @@ export default function Holdings() {
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-white dark:bg-black">
       {/* Header */}
-      <div className="flex items-center gap-4 border-b border-zinc-100 px-8 py-5 dark:border-zinc-900">
+      <div className="flex items-center justify-center border-b border-zinc-100 px-8 py-5 dark:border-zinc-900">
+      <div className="flex w-1/3 items-center gap-4">
         <button
           onClick={() => router.push("/dashboard")}
           className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-black text-black transition-colors hover:bg-zinc-100 dark:border-white dark:text-white dark:hover:bg-zinc-900"
@@ -83,8 +84,10 @@ export default function Holdings() {
         </button>
         <h1 className="text-xl font-semibold text-black dark:text-white">Holdings</h1>
       </div>
+      </div>
 
-      <div className="flex flex-1 flex-col gap-6 overflow-y-auto px-8 py-6">
+      <div className="flex flex-1 flex-col items-center overflow-y-auto px-8 py-6">
+      <div className="flex w-1/3 flex-col gap-6">
         {/* Holdings table */}
         {loading ? (
           <div className="flex justify-center py-12">
@@ -183,6 +186,7 @@ export default function Holdings() {
             </button>
           </form>
         </div>
+      </div>
       </div>
     </div>
   );
