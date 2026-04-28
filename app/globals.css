@@ -48,6 +48,12 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
+.recharts-surface:focus,
+.recharts-wrapper:focus,
+.recharts-sector:focus {
+  outline: none;
+}
+
 :root {
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
