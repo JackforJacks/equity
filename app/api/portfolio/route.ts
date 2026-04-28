@@ -368,6 +368,7 @@ export async function GET(request: Request) {
   let returnOnRisk: number | null = null;
   let robustness: number | null = null;
   let expectedDrawdown: number | null = null;
+  let expectedRealReturn: number | null = null;
 
   if (overlapTimestamps.length >= 4) {
     const portfolioValues: number[] = overlapTimestamps.map(ts =>
@@ -467,6 +468,25 @@ export async function GET(request: Request) {
 
         const raw = ddScore * 0.25 + volScore * 0.20 + hhiScore * 0.20 + corrScore * 0.20 + typeScore * 0.15;
         if (Number.isFinite(raw)) robustness = Math.round(raw);
+
+        // Expected Real Return (CAPM): Rf + β × ERP − current inflation
+        const n = Math.min(portReturns.length, bmReturns.length);
+        const meanP = portReturns.slice(0, n).reduce((a, b) => a + b, 0) / n;
+        const meanB = bmReturns.slice(0, n).reduce((a, b) => a + b, 0) / n;
+        let cov = 0, varB = 0;
+        for (let k = 0; k < n; k++) {
+          cov  += (portReturns[k] - meanP) * (bmReturns[k] - meanB);
+          varB += (bmReturns[k] - meanB) ** 2;
+        }
+        const beta = varB > 0 ? (cov / varB) : 1;
+        const currentRf = riskFreeRateAt(rfRates, Math.floor(Date.now() / 1000));
+        const erp = country === "USA" ? 5.5 : 4.5;
+        const currentInflation = inflationData.rates.length > 0
+          ? inflationData.rates[inflationData.rates.length - 1]
+          : inflationData.fallback;
+        const expNominal = currentRf + beta * erp;
+        const expReal = expNominal - currentInflation;
+        if (Number.isFinite(expReal)) expectedRealReturn = parseFloat(expReal.toFixed(2));
       }
     }
   }
@@ -500,6 +520,6 @@ export async function GET(request: Request) {
   return NextResponse.json({
     segments, holdings: holdingSegments, total,
     pnl12m, historicalRealReturn, edgeOnBenchmark, benchmarkCorrelation, returnOnRisk, quality,
-    robustness, expectedDrawdown,
+    robustness, expectedDrawdown, expectedRealReturn,
   });
 }

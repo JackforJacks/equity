@@ -26,6 +26,7 @@ export default function Dashboard() {
   const [quality, setQuality] = useState<number | null>(null);
   const [robustness, setRobustness] = useState<number | null>(null);
   const [expectedDrawdown, setExpectedDrawdown] = useState<number | null>(null);
+  const [expectedRealReturn, setExpectedRealReturn] = useState<number | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const [radii, setRadii] = useState({ height: 200, outer: 180, inner1: 151, inner2: 124 });
@@ -48,7 +49,7 @@ export default function Dashboard() {
   useEffect(() => {
     fetch(`/api/portfolio?country=${encodeURIComponent(country)}&benchmark=${encodeURIComponent(benchmark)}`)
       .then((r) => r.json())
-      .then((data: { segments: Segment[]; holdings: Segment[]; total: number; pnl12m: number | null; historicalRealReturn: number | null; edgeOnBenchmark: number | null; benchmarkCorrelation: number | null; returnOnRisk: number | null; quality: number | null; robustness: number | null; expectedDrawdown: number | null }) => {
+      .then((data: { segments: Segment[]; holdings: Segment[]; total: number; pnl12m: number | null; historicalRealReturn: number | null; edgeOnBenchmark: number | null; benchmarkCorrelation: number | null; returnOnRisk: number | null; quality: number | null; robustness: number | null; expectedDrawdown: number | null; expectedRealReturn: number | null }) => {
         if (data.segments?.length > 0) {
           setSegments(data.segments);
           setHoldingSegments(data.holdings?.length > 0 ? data.holdings : EMPTY);
@@ -61,6 +62,7 @@ export default function Dashboard() {
           setQuality(data.quality ?? null);
           setRobustness(data.robustness ?? null);
           setExpectedDrawdown(data.expectedDrawdown ?? null);
+          setExpectedRealReturn(data.expectedRealReturn ?? null);
         }
       })
       .catch(() => {});
@@ -237,9 +239,11 @@ export default function Dashboard() {
             <span className="text-[10px] text-zinc-400">safety + diversification</span>
           </div>
           <div className="flex flex-col items-center justify-center gap-0.5 rounded-xl border-2 border-zinc-900 py-2 dark:border-zinc-700">
-            <span className="text-2xl font-bold text-black dark:text-white">—</span>
+            <span className={`text-2xl font-bold ${expectedRealReturn === null ? "text-black dark:text-white" : expectedRealReturn >= 0 ? "text-green-600" : "text-red-500"}`}>
+              {expectedRealReturn === null ? "—" : `${expectedRealReturn >= 0 ? "+" : ""}${expectedRealReturn.toFixed(2)}%`}
+            </span>
             <span className="text-xs font-medium text-black dark:text-white">Expected Real Returns</span>
-            <span className="text-[10px] text-zinc-400">12-month outlook</span>
+            <span className="text-[10px] text-zinc-400">CAPM − current inflation</span>
           </div>
           <div className="flex flex-col items-center justify-center gap-0.5 rounded-xl border-2 border-zinc-900 py-2 dark:border-zinc-700">
             <span className={`text-2xl font-bold ${quality === null ? "text-black dark:text-white" : quality >= 67 ? "text-green-600" : quality >= 33 ? "text-yellow-500" : "text-red-500"}`}>
