@@ -246,7 +246,7 @@ export default function Dashboard() {
               {historicalRealReturn === null ? "—" : `${historicalRealReturn >= 0 ? "+" : ""}${historicalRealReturn.toFixed(2)}%`}
             </span>
             <span className="text-xs font-medium text-black dark:text-white">Historical Real Returns</span>
-            <span className="text-[10px] text-zinc-400">past return after inflation</span>
+            <span className="text-[10px] text-zinc-400">yearly return after inflation</span>
           </div>
         </div>
        </div>
