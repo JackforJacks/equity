@@ -246,7 +246,7 @@ export default function Dashboard() {
             <span className="text-[10px] text-zinc-400">how you move with benchmark</span>
           </div>
           <div className="flex flex-col items-center justify-center gap-0.5 rounded-xl border-2 border-zinc-900 py-2 dark:border-zinc-700">
-            <span className="text-2xl font-bold text-black dark:text-white">
+            <span className={`text-2xl font-bold ${returnOnRisk === null ? "text-black dark:text-white" : returnOnRisk >= 67 ? "text-green-600" : returnOnRisk >= 33 ? "text-yellow-500" : "text-red-500"}`}>
               {returnOnRisk === null ? "—" : returnOnRisk}
             </span>
             <span className="text-xs font-medium text-black dark:text-white">Return on Risk</span>
