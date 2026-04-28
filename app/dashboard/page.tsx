@@ -24,6 +24,8 @@ export default function Dashboard() {
   const [benchmarkCorrelation, setBenchmarkCorrelation] = useState<number | null>(null);
   const [returnOnRisk, setReturnOnRisk] = useState<number | null>(null);
   const [quality, setQuality] = useState<number | null>(null);
+  const [robustness, setRobustness] = useState<number | null>(null);
+  const [expectedDrawdown, setExpectedDrawdown] = useState<number | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const [radii, setRadii] = useState({ height: 200, outer: 180, inner1: 151, inner2: 124 });
@@ -46,7 +48,7 @@ export default function Dashboard() {
   useEffect(() => {
     fetch(`/api/portfolio?country=${encodeURIComponent(country)}&benchmark=${encodeURIComponent(benchmark)}`)
       .then((r) => r.json())
-      .then((data: { segments: Segment[]; holdings: Segment[]; total: number; pnl12m: number | null; historicalRealReturn: number | null; edgeOnBenchmark: number | null; benchmarkCorrelation: number | null; returnOnRisk: number | null; quality: number | null }) => {
+      .then((data: { segments: Segment[]; holdings: Segment[]; total: number; pnl12m: number | null; historicalRealReturn: number | null; edgeOnBenchmark: number | null; benchmarkCorrelation: number | null; returnOnRisk: number | null; quality: number | null; robustness: number | null; expectedDrawdown: number | null }) => {
         if (data.segments?.length > 0) {
           setSegments(data.segments);
           setHoldingSegments(data.holdings?.length > 0 ? data.holdings : EMPTY);
@@ -57,6 +59,8 @@ export default function Dashboard() {
           setBenchmarkCorrelation(data.benchmarkCorrelation ?? null);
           setReturnOnRisk(data.returnOnRisk ?? null);
           setQuality(data.quality ?? null);
+          setRobustness(data.robustness ?? null);
+          setExpectedDrawdown(data.expectedDrawdown ?? null);
         }
       })
       .catch(() => {});
@@ -226,7 +230,9 @@ export default function Dashboard() {
 
         <div className="grid flex-1 min-h-0 grid-cols-2 [grid-template-rows:repeat(4,minmax(0,1fr))] gap-2">
           <div className="flex flex-col items-center justify-center gap-0.5 rounded-xl border-2 border-zinc-900 py-2 dark:border-zinc-700">
-            <span className="text-2xl font-bold text-black dark:text-white">—</span>
+            <span className={`text-2xl font-bold ${robustness === null ? "text-black dark:text-white" : robustness >= 67 ? "text-green-600" : robustness >= 33 ? "text-yellow-500" : "text-red-500"}`}>
+              {robustness === null ? "—" : robustness}
+            </span>
             <span className="text-xs font-medium text-black dark:text-white">Robustness</span>
             <span className="text-[10px] text-zinc-400">safety + diversification</span>
           </div>
@@ -264,9 +270,11 @@ export default function Dashboard() {
             <span className="text-[10px] text-zinc-400">return above the benchmark</span>
           </div>
           <div className="flex flex-col items-center justify-center gap-0.5 rounded-xl border-2 border-zinc-900 py-2 dark:border-zinc-700">
-            <span className="text-2xl font-bold text-black dark:text-white">—</span>
+            <span className={`text-2xl font-bold ${expectedDrawdown === null ? "text-black dark:text-white" : expectedDrawdown >= -5 ? "text-green-600" : expectedDrawdown >= -15 ? "text-yellow-500" : "text-red-500"}`}>
+              {expectedDrawdown === null ? "—" : `${expectedDrawdown.toFixed(1)}%`}
+            </span>
             <span className="text-xs font-medium text-black dark:text-white">Expected Drawdown</span>
-            <span className="text-[10px] text-zinc-400">worst-case projected drop</span>
+            <span className="text-[10px] text-zinc-400">worst monthly loss (VaR 95%)</span>
           </div>
           <div className="flex flex-col items-center justify-center gap-0.5 rounded-xl border-2 border-zinc-900 py-2 dark:border-zinc-700">
             <span className={`text-2xl font-bold ${historicalRealReturn === null ? "text-black dark:text-white" : historicalRealReturn >= 0 ? "text-green-600" : "text-red-500"}`}>

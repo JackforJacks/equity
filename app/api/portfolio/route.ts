@@ -366,6 +366,8 @@ export async function GET(request: Request) {
 
   let benchmarkCorrelation: number | null = null;
   let returnOnRisk: number | null = null;
+  let robustness: number | null = null;
+  let expectedDrawdown: number | null = null;
 
   if (overlapTimestamps.length >= 4) {
     const portfolioValues: number[] = overlapTimestamps.map(ts =>
@@ -394,16 +396,76 @@ export async function GET(request: Request) {
       benchmarkCorrelation = parseFloat((pearsonCorrelation(portReturns, bmReturns) * 100).toFixed(1));
 
       if (portReturns.length >= 12) {
-        // Time-varying risk-free rate: match each monthly return to its period rate
+        // Return on Risk (Sharpe)
         const excess = portReturns.map((r, idx) => {
-          const ts = returnTimestamps[idx];
-          const rfAnnual = riskFreeRateAt(rfRates, ts);
+          const rfAnnual = riskFreeRateAt(rfRates, returnTimestamps[idx]);
           return r - rfAnnual / 100 / 12;
         });
         const meanExcess = excess.reduce((a, b) => a + b, 0) / excess.length;
-        const variance = excess.reduce((s, e) => s + (e - meanExcess) ** 2, 0) / excess.length;
-        const sharpe = variance > 0 ? (meanExcess / Math.sqrt(variance)) * Math.sqrt(12) : 0;
+        const excessVar = excess.reduce((s, e) => s + (e - meanExcess) ** 2, 0) / excess.length;
+        const sharpe = excessVar > 0 ? (meanExcess / Math.sqrt(excessVar)) * Math.sqrt(12) : 0;
         returnOnRisk = Math.min(100, Math.max(0, Math.round((sharpe / 3) * 100)));
+
+        // VaR 95% — worst expected monthly loss
+        const sorted = [...portReturns].sort((a, b) => a - b);
+        const varIdx = Math.max(0, Math.floor(sorted.length * 0.05) - 1);
+        expectedDrawdown = parseFloat((sorted[varIdx] * 100).toFixed(2));
+
+        // Robustness — max drawdown + volatility + HHI + avg pairwise correlation + type spread
+        // 1. Max drawdown
+        let peak = 1, val = 1, maxDD = 0;
+        for (const r of portReturns) {
+          val *= (1 + r);
+          if (val > peak) peak = val;
+          const dd = (peak - val) / peak;
+          if (dd > maxDD) maxDD = dd;
+        }
+        const ddScore = Math.min(100, Math.max(0, (1 - maxDD / 0.5) * 100));
+
+        // 2. Volatility
+        const retMean = portReturns.reduce((a, b) => a + b, 0) / portReturns.length;
+        const retVar  = portReturns.reduce((s, r) => s + (r - retMean) ** 2, 0) / portReturns.length;
+        const annualVol = Math.sqrt(retVar * 12) * 100;
+        const volScore = Math.min(100, Math.max(0, (1 - annualVol / 50) * 100));
+
+        // 3. HHI concentration (lower = better)
+        const hhi = holdings.reduce((sum, h, i) => {
+          const w = (h.quantity * (priceData[i].current ?? 0)) / total;
+          return sum + w * w;
+        }, 0);
+        const hhiScore = Math.min(100, Math.max(0, (1 - hhi) * 100));
+
+        // 4. Avg pairwise correlation of holdings (lower = better diversified)
+        const holdingReturns = holdings.map((_, i) => {
+          const returns: number[] = [];
+          for (let t = 1; t < overlapTimestamps.length; t++) {
+            const prev = nearestPrice(priceData[i].closes, priceData[i].timestamps, overlapTimestamps[t - 1]);
+            const next = nearestPrice(priceData[i].closes, priceData[i].timestamps, overlapTimestamps[t]);
+            returns.push(prev && next && prev > 0 ? next / prev - 1 : 0);
+          }
+          return returns;
+        });
+        let corrSum = 0, corrCount = 0;
+        for (let a = 0; a < holdings.length; a++) {
+          for (let b = a + 1; b < holdings.length; b++) {
+            corrSum += pearsonCorrelation(holdingReturns[a], holdingReturns[b]);
+            corrCount++;
+          }
+        }
+        const avgCorr = corrCount > 0 ? corrSum / corrCount : 0;
+        const corrScore = Math.min(100, Math.max(0, (1 - avgCorr) * 100));
+
+        // 5. Type spread (more types = more robust)
+        const numTypes = Object.keys(typeValues).length;
+        const typeScore = Math.min(100, ((numTypes - 1) / 3) * 100);
+
+        robustness = Math.round(
+          ddScore   * 0.25 +
+          volScore  * 0.20 +
+          hhiScore  * 0.20 +
+          corrScore * 0.20 +
+          typeScore * 0.15
+        );
       }
     }
   }
@@ -437,5 +499,6 @@ export async function GET(request: Request) {
   return NextResponse.json({
     segments, holdings: holdingSegments, total,
     pnl12m, historicalRealReturn, edgeOnBenchmark, benchmarkCorrelation, returnOnRisk, quality,
+    robustness, expectedDrawdown,
   });
 }
