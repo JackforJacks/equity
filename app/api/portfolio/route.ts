@@ -172,14 +172,15 @@ function nearestPrice(closes: (number | null)[], timestamps: number[], targetTs:
 async function fetchFMPQuality(ticker: string, apiKey: string): Promise<number | null> {
   try {
     const res = await fetch(
-      `https://financialmodelingprep.com/api/v3/rating/${ticker}?apikey=${apiKey}`,
+      `https://financialmodelingprep.com/api/v3/rating/${encodeURIComponent(ticker)}?apikey=${apiKey}`,
       { next: { revalidate: 86400 } }
     );
+    if (!res.ok) return null;
     const json = await res.json();
+    if (!Array.isArray(json) || !json[0]) return null;
     const d = json[0];
-    if (!d) return null;
     const scores = [d.ratingDetailsROEScore, d.ratingDetailsROAScore, d.ratingDetailsDEScore]
-      .filter((s): s is number => typeof s === "number");
+      .filter((s): s is number => typeof s === "number" && s > 0);
     if (!scores.length) return null;
     return Math.round((scores.reduce((a, b) => a + b, 0) / scores.length / 5) * 100);
   } catch {
