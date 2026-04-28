@@ -239,41 +239,49 @@ export async function GET(request: Request) {
   const total = currentTotal;
   if (total === 0) return NextResponse.json([]);
 
-  // — Benchmark Correlation —
-  // Use the overlapping period: latest start across all holdings
+  // — Shared monthly return series for correlation + Sharpe —
+  const RISK_FREE_RATE = country === "USA" ? 4.0 : 2.5; // annual %, based on 10yr govt bond
+
   const overlapStart = Math.max(...priceData.map(pd => pd.startTimestamp).filter(t => t > 0));
-  const overlapTimestamps = benchmarkData
-    .filter(d => d.timestamp >= overlapStart)
-    .map(d => d.timestamp);
+  const overlapTimestamps = benchmarkData.filter(d => d.timestamp >= overlapStart).map(d => d.timestamp);
 
   let benchmarkCorrelation: number | null = null;
-  if (overlapTimestamps.length >= 4 && holdings.every((_, i) => priceData[i].timestamps.length > 0)) {
-    // Portfolio value at each benchmark timestamp
+  let returnOnRisk: number | null = null;
+
+  if (overlapTimestamps.length >= 4) {
     const portfolioValues: number[] = overlapTimestamps.map(ts =>
       holdings.reduce((sum, h, i) => {
         const price = nearestPrice(priceData[i].closes, priceData[i].timestamps, ts);
         return price != null ? sum + h.quantity * price : sum;
       }, 0)
-    ).filter(v => v > 0);
+    );
 
-    // Benchmark values at same timestamps
-    const benchmarkValues = overlapTimestamps
-      .map(ts => benchmarkData.find(d => d.timestamp === ts)?.close ?? null)
-      .filter((v): v is number => v != null);
+    const portReturns: number[] = [];
+    const bmReturns: number[] = [];
 
-    const n = Math.min(portfolioValues.length, benchmarkValues.length);
-    if (n >= 4) {
-      const portReturns: number[] = [];
-      const bmReturns: number[] = [];
-      for (let i = 1; i < n; i++) {
-        if (portfolioValues[i - 1] > 0 && benchmarkValues[i - 1] > 0) {
-          portReturns.push(portfolioValues[i] / portfolioValues[i - 1] - 1);
-          bmReturns.push(benchmarkValues[i] / benchmarkValues[i - 1] - 1);
-        }
+    for (let i = 1; i < overlapTimestamps.length; i++) {
+      const pPrev = portfolioValues[i - 1], pNext = portfolioValues[i];
+      const bPrev = benchmarkData.find(d => d.timestamp === overlapTimestamps[i - 1])?.close ?? 0;
+      const bNext = benchmarkData.find(d => d.timestamp === overlapTimestamps[i])?.close ?? 0;
+      if (pPrev > 0 && pNext > 0 && bPrev > 0 && bNext > 0) {
+        portReturns.push(pNext / pPrev - 1);
+        bmReturns.push(bNext / bPrev - 1);
       }
-      if (portReturns.length >= 3) {
-        const r = pearsonCorrelation(portReturns, bmReturns);
-        benchmarkCorrelation = parseFloat((r * 100).toFixed(1));
+    }
+
+    if (portReturns.length >= 3) {
+      // Benchmark Correlation
+      const r = pearsonCorrelation(portReturns, bmReturns);
+      benchmarkCorrelation = parseFloat((r * 100).toFixed(1));
+
+      // Return on Risk (Sharpe Ratio → 0-100)
+      if (portReturns.length >= 12) {
+        const rfMonthly = RISK_FREE_RATE / 100 / 12;
+        const excess = portReturns.map(r => r - rfMonthly);
+        const meanExcess = excess.reduce((a, b) => a + b, 0) / excess.length;
+        const variance = excess.reduce((s, r) => s + (r - meanExcess) ** 2, 0) / excess.length;
+        const sharpe = variance > 0 ? (meanExcess / Math.sqrt(variance)) * Math.sqrt(12) : 0;
+        returnOnRisk = Math.min(100, Math.max(0, Math.round((sharpe / 3) * 100)));
       }
     }
   }
@@ -311,6 +319,6 @@ export async function GET(request: Request) {
 
   return NextResponse.json({
     segments, holdings: holdingSegments, total,
-    pnl12m, historicalRealReturn, edgeOnBenchmark, benchmarkCorrelation,
+    pnl12m, historicalRealReturn, edgeOnBenchmark, benchmarkCorrelation, returnOnRisk,
   });
 }
