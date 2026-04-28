@@ -17,6 +17,23 @@ export default function Dashboard() {
   const [total, setTotal] = useState<number | null>(null);
   const [pnl12m, setPnl12m] = useState<number | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const chartContainerRef = useRef<HTMLDivElement>(null);
+  const [radii, setRadii] = useState({ height: 200, outer: 180, inner1: 151, inner2: 124 });
+
+  useEffect(() => {
+    const measure = () => {
+      if (!chartContainerRef.current) return;
+      const w = chartContainerRef.current.offsetWidth;
+      const outer = Math.floor(w / 2) - 2;
+      const inner1 = Math.round(outer * 0.84);
+      const inner2 = Math.round(inner1 * 0.82);
+      setRadii({ height: outer + 4, outer, inner1, inner2 });
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    if (chartContainerRef.current) ro.observe(chartContainerRef.current);
+    return () => ro.disconnect();
+  }, []);
 
   useEffect(() => {
     fetch("/api/portfolio")
@@ -74,8 +91,8 @@ export default function Dashboard() {
       <main className="flex flex-1 flex-col overflow-hidden px-8 py-6">
        <div className="mx-auto flex flex-1 min-h-0 w-1/3 flex-col gap-2">
         <div className="flex flex-1 min-h-0 flex-col items-center rounded-xl border-2 border-zinc-900 px-3 pt-2 pb-3 dark:border-zinc-700">
-        <div className="relative w-full" style={{ aspectRatio: "2/1" }}>
-          <ResponsiveContainer width="100%" height="100%">
+        <div className="relative w-full" ref={chartContainerRef}>
+          <ResponsiveContainer width="100%" height={radii.height}>
             <PieChart>
               {/* Outer ring — individual holdings with gross value */}
               <Pie
@@ -86,8 +103,8 @@ export default function Dashboard() {
                 endAngle={0}
                 cx="50%"
                 cy="100%"
-                outerRadius="92%"
-                innerRadius="76%"
+                outerRadius={radii.outer}
+                innerRadius={radii.inner1}
                 paddingAngle={holdingSegments === EMPTY ? 0 : 2}
                 fill="#e4e4e7"
               >
@@ -104,8 +121,8 @@ export default function Dashboard() {
                 endAngle={0}
                 cx="50%"
                 cy="100%"
-                outerRadius="76%"
-                innerRadius="62%"
+                outerRadius={radii.inner1}
+                innerRadius={radii.inner2}
                 paddingAngle={isEmpty ? 0 : 2}
                 fill="#e4e4e7"
               >
@@ -114,6 +131,7 @@ export default function Dashboard() {
                 ))}
               </Pie>
               <Tooltip
+                animationDuration={0}
                 content={({ active, payload }) => {
                   if (!active || !payload?.length || payload[0].name === "Empty") return null;
                   const seg = payload[0].payload as Segment;
