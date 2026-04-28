@@ -169,6 +169,24 @@ function nearestPrice(closes: (number | null)[], timestamps: number[], targetTs:
   return bestDiff <= 45 * 24 * 3600 ? best : null;
 }
 
+async function fetchFMPQuality(ticker: string, apiKey: string): Promise<number | null> {
+  try {
+    const res = await fetch(
+      `https://financialmodelingprep.com/api/v3/rating/${ticker}?apikey=${apiKey}`,
+      { next: { revalidate: 86400 } }
+    );
+    const json = await res.json();
+    const d = json[0];
+    if (!d) return null;
+    const scores = [d.ratingDetailsROEScore, d.ratingDetailsROAScore, d.ratingDetailsDEScore]
+      .filter((s): s is number => typeof s === "number");
+    if (!scores.length) return null;
+    return Math.round((scores.reduce((a, b) => a + b, 0) / scores.length / 5) * 100);
+  } catch {
+    return null;
+  }
+}
+
 function pearsonCorrelation(x: number[], y: number[]): number {
   const n = x.length;
   if (n < 3) return 0;
@@ -290,6 +308,26 @@ export async function GET(request: Request) {
   const total = currentTotal;
   if (total === 0) return NextResponse.json([]);
 
+  // — Quality score via FMP ratings —
+  const fmpKey = process.env.FMP_API_KEY ?? "";
+  let quality: number | null = null;
+  if (fmpKey) {
+    const qualityScores = await Promise.all(
+      figiData.map(async (result, i) => {
+        const ticker = result.data?.[0]?.ticker;
+        if (!ticker || priceData[i].current == null) return null;
+        const score = await fetchFMPQuality(ticker, fmpKey);
+        const weight = (holdings[i].quantity * (priceData[i].current ?? 0)) / total;
+        return score != null ? { score, weight } : null;
+      })
+    );
+    const valid = qualityScores.filter((q): q is { score: number; weight: number } => q != null);
+    if (valid.length > 0) {
+      const totalWeight = valid.reduce((s, q) => s + q.weight, 0);
+      quality = Math.round(valid.reduce((s, q) => s + q.score * q.weight, 0) / totalWeight);
+    }
+  }
+
   // — Shared monthly return series (correlation + Sharpe) —
   const overlapStart = Math.max(...priceData.map(pd => pd.startTimestamp).filter(t => t > 0));
   const overlapTimestamps = benchmarkData.filter(d => d.timestamp >= overlapStart).map(d => d.timestamp);
@@ -366,6 +404,6 @@ export async function GET(request: Request) {
 
   return NextResponse.json({
     segments, holdings: holdingSegments, total,
-    pnl12m, historicalRealReturn, edgeOnBenchmark, benchmarkCorrelation, returnOnRisk,
+    pnl12m, historicalRealReturn, edgeOnBenchmark, benchmarkCorrelation, returnOnRisk, quality,
   });
 }
