@@ -15,6 +15,7 @@ export default function Dashboard() {
   const [currency, setCurrency] = useState("EUR");
   const [country, setCountry] = useState("Italy");
   const [benchmark, setBenchmark] = useState("S&P 500");
+  const [loading, setLoading] = useState(true);
   const [segments, setSegments] = useState<Segment[]>(EMPTY);
   const [holdingSegments, setHoldingSegments] = useState<Segment[]>(EMPTY);
   const [total, setTotal] = useState<number | null>(null);
@@ -65,7 +66,8 @@ export default function Dashboard() {
           setExpectedRealReturn(data.expectedRealReturn ?? null);
         }
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setLoading(false));
   }, [country, benchmark]);
 
   useEffect(() => {
@@ -88,6 +90,11 @@ export default function Dashboard() {
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-white dark:bg-black">
+      {loading && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-white dark:bg-black">
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-zinc-200 border-t-black dark:border-zinc-800 dark:border-t-white" />
+        </div>
+      )}
       <div className="fixed top-6 right-6 z-10" ref={menuRef}>
         <button
           onClick={() => setMenuOpen((v) => !v)}
