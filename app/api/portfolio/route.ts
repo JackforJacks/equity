@@ -48,8 +48,9 @@ type BenchmarkPoint = { timestamp: number; close: number };
 type RatePoint      = { timestamp: number; rate: number };
 
 function yahooTicker(ticker: string, exchCode: string) {
+  const sanitized = ticker.replace(/\//g, "-").replace(/\s+/g, "-");
   const suffix = EXCHANGE_SUFFIX[exchCode];
-  return suffix ? `${ticker}${suffix}` : ticker;
+  return suffix ? `${sanitized}${suffix}` : sanitized;
 }
 
 function ecbRiskFreeRates(): RatePoint[] {
@@ -278,7 +279,7 @@ export async function GET(request: Request) {
         const symbol = yahooTicker(item.ticker, item.exchCode);
         try {
           const res = await fetch(
-            `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1mo&period1=0&period2=${period2}`,
+            `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=1mo&period1=0&period2=${period2}`,
             { headers: { "User-Agent": "Mozilla/5.0", "Accept": "application/json" } }
           );
           const json = await res.json();
