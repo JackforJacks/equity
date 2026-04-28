@@ -101,9 +101,37 @@ function benchmarkPriceAt(data: BenchmarkPoint[], targetTs: number): number | nu
   return data[idx].close;
 }
 
+// Find nearest non-null price within 45 days of target timestamp
+function nearestPrice(closes: (number | null)[], timestamps: number[], targetTs: number): number | null {
+  let best: number | null = null;
+  let bestDiff = Infinity;
+  for (let i = 0; i < timestamps.length; i++) {
+    const diff = Math.abs(timestamps[i] - targetTs);
+    if (diff < bestDiff && closes[i] != null) {
+      bestDiff = diff;
+      best = closes[i] as number;
+    }
+  }
+  return bestDiff <= 45 * 24 * 3600 ? best : null;
+}
+
+function pearsonCorrelation(x: number[], y: number[]): number {
+  const n = x.length;
+  if (n < 3) return 0;
+  const mx = x.reduce((a, b) => a + b, 0) / n;
+  const my = y.reduce((a, b) => a + b, 0) / n;
+  let num = 0, dx = 0, dy = 0;
+  for (let i = 0; i < n; i++) {
+    num += (x[i] - mx) * (y[i] - my);
+    dx  += (x[i] - mx) ** 2;
+    dy  += (y[i] - my) ** 2;
+  }
+  return dx * dy > 0 ? num / Math.sqrt(dx * dy) : 0;
+}
+
 export async function GET(request: Request) {
   const params = new URL(request.url).searchParams;
-  const country   = params.get("country")   ?? "Italy";
+  const country       = params.get("country")   ?? "Italy";
   const benchmarkName = params.get("benchmark") ?? "S&P 500";
   const benchmarkTicker = BENCHMARK_TICKERS[benchmarkName] ?? "^GSPC";
 
@@ -142,7 +170,7 @@ export async function GET(request: Request) {
     Promise.all(
       figiData.map(async (result) => {
         const item = result.data?.[0];
-        if (!item?.ticker) return { current: null, yearAgo: null, oldest: null, actualYears: 0, startTimestamp: 0 };
+        if (!item?.ticker) return { current: null, yearAgo: null, oldest: null, actualYears: 0, startTimestamp: 0, closes: [] as (number | null)[], timestamps: [] as number[] };
         const symbol = yahooTicker(item.ticker, item.exchCode);
         try {
           const res = await fetch(
@@ -162,9 +190,9 @@ export async function GET(request: Request) {
           const actualYears = startTimestamp > 0 && endTimestamp > startTimestamp
             ? (endTimestamp - startTimestamp) / (365.25 * 24 * 3600)
             : 0;
-          return { current, yearAgo, oldest, actualYears, startTimestamp };
+          return { current, yearAgo, oldest, actualYears, startTimestamp, closes, timestamps };
         } catch {
-          return { current: null, yearAgo: null, oldest: null, actualYears: 0, startTimestamp: 0 };
+          return { current: null, yearAgo: null, oldest: null, actualYears: 0, startTimestamp: 0, closes: [] as (number | null)[], timestamps: [] as number[] };
         }
       })
     ),
@@ -177,10 +205,8 @@ export async function GET(request: Request) {
   const typeValues: Record<string, number> = {};
   let currentTotal = 0;
   let yearAgoTotal = 0;
-  let weightedRealCagr = 0;
-  let cagrWeight = 0;
-  let weightedEdge = 0;
-  let edgeWeight = 0;
+  let weightedRealCagr = 0, cagrWeight = 0;
+  let weightedEdge = 0, edgeWeight = 0;
 
   holdings.forEach((holding, i) => {
     const { current, yearAgo, oldest, actualYears, startTimestamp } = priceData[i];
@@ -213,6 +239,45 @@ export async function GET(request: Request) {
   const total = currentTotal;
   if (total === 0) return NextResponse.json([]);
 
+  // — Benchmark Correlation —
+  // Use the overlapping period: latest start across all holdings
+  const overlapStart = Math.max(...priceData.map(pd => pd.startTimestamp).filter(t => t > 0));
+  const overlapTimestamps = benchmarkData
+    .filter(d => d.timestamp >= overlapStart)
+    .map(d => d.timestamp);
+
+  let benchmarkCorrelation: number | null = null;
+  if (overlapTimestamps.length >= 4 && holdings.every((_, i) => priceData[i].timestamps.length > 0)) {
+    // Portfolio value at each benchmark timestamp
+    const portfolioValues: number[] = overlapTimestamps.map(ts =>
+      holdings.reduce((sum, h, i) => {
+        const price = nearestPrice(priceData[i].closes, priceData[i].timestamps, ts);
+        return price != null ? sum + h.quantity * price : sum;
+      }, 0)
+    ).filter(v => v > 0);
+
+    // Benchmark values at same timestamps
+    const benchmarkValues = overlapTimestamps
+      .map(ts => benchmarkData.find(d => d.timestamp === ts)?.close ?? null)
+      .filter((v): v is number => v != null);
+
+    const n = Math.min(portfolioValues.length, benchmarkValues.length);
+    if (n >= 4) {
+      const portReturns: number[] = [];
+      const bmReturns: number[] = [];
+      for (let i = 1; i < n; i++) {
+        if (portfolioValues[i - 1] > 0 && benchmarkValues[i - 1] > 0) {
+          portReturns.push(portfolioValues[i] / portfolioValues[i - 1] - 1);
+          bmReturns.push(benchmarkValues[i] / benchmarkValues[i - 1] - 1);
+        }
+      }
+      if (portReturns.length >= 3) {
+        const r = pearsonCorrelation(portReturns, bmReturns);
+        benchmarkCorrelation = Math.round(((r + 1) / 2) * 100);
+      }
+    }
+  }
+
   const segments = Object.entries(typeValues).map(([type, value]) => ({
     label: type,
     value: Math.round((value / total) * 100),
@@ -244,5 +309,8 @@ export async function GET(request: Request) {
     ? parseFloat((weightedEdge / edgeWeight).toFixed(2))
     : null;
 
-  return NextResponse.json({ segments, holdings: holdingSegments, total, pnl12m, historicalRealReturn, edgeOnBenchmark });
+  return NextResponse.json({
+    segments, holdings: holdingSegments, total,
+    pnl12m, historicalRealReturn, edgeOnBenchmark, benchmarkCorrelation,
+  });
 }

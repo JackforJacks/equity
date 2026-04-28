@@ -21,6 +21,7 @@ export default function Dashboard() {
   const [pnl12m, setPnl12m] = useState<number | null>(null);
   const [historicalRealReturn, setHistoricalRealReturn] = useState<number | null>(null);
   const [edgeOnBenchmark, setEdgeOnBenchmark] = useState<number | null>(null);
+  const [benchmarkCorrelation, setBenchmarkCorrelation] = useState<number | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const [radii, setRadii] = useState({ height: 200, outer: 180, inner1: 151, inner2: 124 });
@@ -43,7 +44,7 @@ export default function Dashboard() {
   useEffect(() => {
     fetch(`/api/portfolio?country=${encodeURIComponent(country)}&benchmark=${encodeURIComponent(benchmark)}`)
       .then((r) => r.json())
-      .then((data: { segments: Segment[]; holdings: Segment[]; total: number; pnl12m: number | null; historicalRealReturn: number | null; edgeOnBenchmark: number | null }) => {
+      .then((data: { segments: Segment[]; holdings: Segment[]; total: number; pnl12m: number | null; historicalRealReturn: number | null; edgeOnBenchmark: number | null; benchmarkCorrelation: number | null }) => {
         if (data.segments?.length > 0) {
           setSegments(data.segments);
           setHoldingSegments(data.holdings?.length > 0 ? data.holdings : EMPTY);
@@ -51,6 +52,7 @@ export default function Dashboard() {
           setPnl12m(data.pnl12m ?? null);
           setHistoricalRealReturn(data.historicalRealReturn ?? null);
           setEdgeOnBenchmark(data.edgeOnBenchmark ?? null);
+          setBenchmarkCorrelation(data.benchmarkCorrelation ?? null);
         }
       })
       .catch(() => {});
@@ -235,7 +237,9 @@ export default function Dashboard() {
             <span className="text-[10px] text-zinc-400">fundamental health</span>
           </div>
           <div className="flex flex-col items-center justify-center gap-0.5 rounded-xl border-2 border-zinc-900 py-2 dark:border-zinc-700">
-            <span className="text-2xl font-bold text-black dark:text-white">—</span>
+            <span className="text-2xl font-bold text-black dark:text-white">
+              {benchmarkCorrelation === null ? "—" : `${benchmarkCorrelation}`}
+            </span>
             <span className="text-xs font-medium text-black dark:text-white">Benchmark Correlation</span>
             <span className="text-[10px] text-zinc-400">how you move with benchmark</span>
           </div>
