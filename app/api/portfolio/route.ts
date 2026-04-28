@@ -17,12 +17,17 @@ const EXCHANGE_SUFFIX: Record<string, string> = {
   AU: ".AX", HK: ".HK", JP: ".T",
 };
 
+const BENCHMARK_TICKERS: Record<string, string> = {
+  "S&P 500": "^GSPC",
+};
+
 function yahooTicker(ticker: string, exchCode: string) {
   const suffix = EXCHANGE_SUFFIX[exchCode];
   return suffix ? `${ticker}${suffix}` : ticker;
 }
 
 type InflationData = { rates: number[]; isMonthly: boolean; fallback: number };
+type BenchmarkPoint = { timestamp: number; close: number };
 
 async function fetchAllInflationData(country: string): Promise<InflationData> {
   if (country === "USA") {
@@ -68,8 +73,39 @@ function avgInflationForMonths(inflation: InflationData, months: number): number
   }
 }
 
+async function fetchBenchmarkData(ticker: string): Promise<BenchmarkPoint[]> {
+  try {
+    const period2 = Math.floor(Date.now() / 1000);
+    const res = await fetch(
+      `https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?interval=1mo&period1=0&period2=${period2}`,
+      { headers: { "User-Agent": "Mozilla/5.0", "Accept": "application/json" } }
+    );
+    const json = await res.json();
+    const r = json.chart?.result?.[0];
+    const closes: (number | null)[] = r?.indicators?.quote?.[0]?.close ?? [];
+    const timestamps: number[] = r?.timestamp ?? [];
+    const result: BenchmarkPoint[] = [];
+    for (let i = 0; i < Math.min(timestamps.length, closes.length); i++) {
+      if (closes[i] != null) result.push({ timestamp: timestamps[i], close: closes[i] as number });
+    }
+    return result;
+  } catch {
+    return [];
+  }
+}
+
+function benchmarkPriceAt(data: BenchmarkPoint[], targetTs: number): number | null {
+  if (!data.length) return null;
+  const idx = data.findIndex(d => d.timestamp >= targetTs);
+  if (idx === -1) return data[data.length - 1].close;
+  return data[idx].close;
+}
+
 export async function GET(request: Request) {
-  const country = new URL(request.url).searchParams.get("country") ?? "Italy";
+  const params = new URL(request.url).searchParams;
+  const country   = params.get("country")   ?? "Italy";
+  const benchmarkName = params.get("benchmark") ?? "S&P 500";
+  const benchmarkTicker = BENCHMARK_TICKERS[benchmarkName] ?? "^GSPC";
 
   const cookieStore = await cookies();
   const supabase = createServerClient(
@@ -93,7 +129,6 @@ export async function GET(request: Request) {
 
   if (!holdings?.length) return NextResponse.json([]);
 
-  // 1 — Convert ISINs to tickers via OpenFIGI
   const figiRes = await fetch("https://api.openfigi.com/v3/mapping", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -101,18 +136,17 @@ export async function GET(request: Request) {
   });
   const figiData: { data?: { ticker: string; exchCode: string }[] }[] = await figiRes.json();
 
-  // 2 — Fetch max monthly history + full inflation history in parallel
-  const [priceData, inflationData] = await Promise.all([
+  const period2 = Math.floor(Date.now() / 1000);
+
+  const [priceData, inflationData, benchmarkData] = await Promise.all([
     Promise.all(
       figiData.map(async (result) => {
         const item = result.data?.[0];
-        if (!item?.ticker) return { current: null, yearAgo: null, oldest: null, actualYears: 0 };
+        if (!item?.ticker) return { current: null, yearAgo: null, oldest: null, actualYears: 0, startTimestamp: 0 };
         const symbol = yahooTicker(item.ticker, item.exchCode);
         try {
-          const period1 = 0; // oldest available data point (Unix epoch)
-          const period2 = Math.floor(Date.now() / 1000);
           const res = await fetch(
-            `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1mo&period1=${period1}&period2=${period2}`,
+            `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1mo&period1=0&period2=${period2}`,
             { headers: { "User-Agent": "Mozilla/5.0", "Accept": "application/json" } }
           );
           const json = await res.json();
@@ -123,27 +157,33 @@ export async function GET(request: Request) {
           const yearAgo: number | null = closes.length >= 13 ? (closes[closes.length - 13] ?? null) : (closes[0] ?? null);
           const firstValidIdx = closes.findIndex((v): v is number => v != null);
           const oldest: number | null = firstValidIdx >= 0 ? (closes[firstValidIdx] as number) : null;
-          const actualYears = firstValidIdx >= 0 && timestamps.length > firstValidIdx
-            ? (timestamps[timestamps.length - 1] - timestamps[firstValidIdx]) / (365.25 * 24 * 3600)
+          const startTimestamp = firstValidIdx >= 0 && timestamps[firstValidIdx] ? timestamps[firstValidIdx] : 0;
+          const endTimestamp = timestamps[timestamps.length - 1] ?? 0;
+          const actualYears = startTimestamp > 0 && endTimestamp > startTimestamp
+            ? (endTimestamp - startTimestamp) / (365.25 * 24 * 3600)
             : 0;
-          return { current, yearAgo, oldest, actualYears };
+          return { current, yearAgo, oldest, actualYears, startTimestamp };
         } catch {
-          return { current: null, yearAgo: null, oldest: null, actualYears: 0 };
+          return { current: null, yearAgo: null, oldest: null, actualYears: 0, startTimestamp: 0 };
         }
       })
     ),
     fetchAllInflationData(country),
+    fetchBenchmarkData(benchmarkTicker),
   ]);
 
-  // 3 — Aggregate values and compute metrics
+  const benchmarkCurrentClose = benchmarkData.length > 0 ? benchmarkData[benchmarkData.length - 1].close : null;
+
   const typeValues: Record<string, number> = {};
   let currentTotal = 0;
   let yearAgoTotal = 0;
   let weightedRealCagr = 0;
   let cagrWeight = 0;
+  let weightedEdge = 0;
+  let edgeWeight = 0;
 
   holdings.forEach((holding, i) => {
-    const { current, yearAgo, oldest, actualYears } = priceData[i];
+    const { current, yearAgo, oldest, actualYears, startTimestamp } = priceData[i];
     if (current != null) {
       const v = holding.quantity * current;
       typeValues[holding.type] = (typeValues[holding.type] ?? 0) + v;
@@ -152,9 +192,17 @@ export async function GET(request: Request) {
       if (oldest != null && actualYears >= 1 && oldest > 0) {
         const nominalCagr = (Math.pow(current / oldest, 1 / actualYears) - 1) * 100;
         const inflationForPeriod = avgInflationForMonths(inflationData, Math.round(actualYears * 12));
-        const realCagr = nominalCagr - inflationForPeriod;
-        weightedRealCagr += realCagr * v;
+        weightedRealCagr += (nominalCagr - inflationForPeriod) * v;
         cagrWeight += v;
+
+        if (benchmarkCurrentClose != null && startTimestamp > 0) {
+          const benchmarkAtStart = benchmarkPriceAt(benchmarkData, startTimestamp);
+          if (benchmarkAtStart != null && benchmarkAtStart > 0) {
+            const benchmarkCagr = (Math.pow(benchmarkCurrentClose / benchmarkAtStart, 1 / actualYears) - 1) * 100;
+            weightedEdge += (nominalCagr - benchmarkCagr) * v;
+            edgeWeight += v;
+          }
+        }
       }
     }
     if (yearAgo != null && current != null) {
@@ -192,5 +240,9 @@ export async function GET(request: Request) {
     ? parseFloat((weightedRealCagr / cagrWeight).toFixed(2))
     : null;
 
-  return NextResponse.json({ segments, holdings: holdingSegments, total, pnl12m, historicalRealReturn });
+  const edgeOnBenchmark = edgeWeight > 0
+    ? parseFloat((weightedEdge / edgeWeight).toFixed(2))
+    : null;
+
+  return NextResponse.json({ segments, holdings: holdingSegments, total, pnl12m, historicalRealReturn, edgeOnBenchmark });
 }
