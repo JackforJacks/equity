@@ -14,6 +14,7 @@ export default function Dashboard() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [currency, setCurrency] = useState("EUR");
   const [country, setCountry] = useState("Italy");
+  const [benchmark, setBenchmark] = useState("S&P 500");
   const [segments, setSegments] = useState<Segment[]>(EMPTY);
   const [holdingSegments, setHoldingSegments] = useState<Segment[]>(EMPTY);
   const [total, setTotal] = useState<number | null>(null);
@@ -98,6 +99,16 @@ export default function Dashboard() {
                 >
                   <option>EUR</option>
                   <option>USD</option>
+                </select>
+              </div>
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-sm text-zinc-600 dark:text-zinc-400">Benchmark</span>
+                <select
+                  value={benchmark}
+                  onChange={(e) => setBenchmark(e.target.value)}
+                  className="rounded-lg border border-zinc-200 bg-white px-2 py-1 text-sm text-black outline-none dark:border-zinc-700 dark:bg-zinc-900 dark:text-white"
+                >
+                  <option>S&P 500</option>
                 </select>
               </div>
               <div className="flex items-center justify-between gap-3">
@@ -223,8 +234,8 @@ export default function Dashboard() {
           </div>
           <div className="flex flex-col items-center justify-center gap-0.5 rounded-xl border-2 border-zinc-900 py-2 dark:border-zinc-700">
             <span className="text-2xl font-bold text-black dark:text-white">—</span>
-            <span className="text-xs font-medium text-black dark:text-white">Market Correlation</span>
-            <span className="text-[10px] text-zinc-400">how you move with markets</span>
+            <span className="text-xs font-medium text-black dark:text-white">Benchmark Correlation</span>
+            <span className="text-[10px] text-zinc-400">how you move with benchmark</span>
           </div>
           <div className="flex flex-col items-center justify-center gap-0.5 rounded-xl border-2 border-zinc-900 py-2 dark:border-zinc-700">
             <span className="text-2xl font-bold text-black dark:text-white">—</span>
@@ -233,8 +244,8 @@ export default function Dashboard() {
           </div>
           <div className="flex flex-col items-center justify-center gap-0.5 rounded-xl border-2 border-zinc-900 py-2 dark:border-zinc-700">
             <span className="text-2xl font-bold text-black dark:text-white">—</span>
-            <span className="text-xs font-medium text-black dark:text-white">Edge on Market</span>
-            <span className="text-[10px] text-zinc-400">return above the S&P 500</span>
+            <span className="text-xs font-medium text-black dark:text-white">Edge on Benchmark</span>
+            <span className="text-[10px] text-zinc-400">return above the benchmark</span>
           </div>
           <div className="flex flex-col items-center justify-center gap-0.5 rounded-xl border-2 border-zinc-900 py-2 dark:border-zinc-700">
             <span className="text-2xl font-bold text-black dark:text-white">—</span>
