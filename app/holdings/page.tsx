@@ -21,6 +21,10 @@ export default function Holdings() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editQuantity, setEditQuantity] = useState("");
+  const [editType, setEditType] = useState("");
+  const [editDate, setEditDate] = useState("");
 
   const [isin, setIsin] = useState("");
   const [quantity, setQuantity] = useState("");
@@ -69,6 +73,26 @@ export default function Holdings() {
     setHoldings(h => h.filter(x => x.id !== id));
   }
 
+  function startEdit(h: Holding) {
+    setEditingId(h.id);
+    setEditQuantity(String(h.quantity));
+    setEditType(h.type);
+    setEditDate(h.purchase_date);
+  }
+
+  async function handleSaveEdit(id: string) {
+    await supabase.from("portfolio_holdings").update({
+      quantity: parseFloat(editQuantity),
+      type: editType,
+      purchase_date: editDate,
+    }).eq("id", id);
+    setEditingId(null);
+    setHoldings(h => h.map(x => x.id === id
+      ? { ...x, quantity: parseFloat(editQuantity), type: editType, purchase_date: editDate }
+      : x
+    ));
+  }
+
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-white dark:bg-black">
       {/* Header */}
@@ -111,21 +135,43 @@ export default function Holdings() {
                 {holdings.map((h, i) => (
                   <tr key={h.id} className={i < holdings.length - 1 ? "border-b border-zinc-100 dark:border-zinc-900" : ""}>
                     <td className="px-4 py-3 font-mono text-xs text-black dark:text-white">{h.isin}</td>
-                    <td className="px-4 py-3 text-black dark:text-white">{h.quantity}</td>
                     <td className="px-4 py-3">
-                      <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">{h.type}</span>
+                      {editingId === h.id
+                        ? <input type="number" value={editQuantity} onChange={e => setEditQuantity(e.target.value)} className="w-24 rounded border border-zinc-300 px-2 py-1 text-sm text-black outline-none focus:border-black dark:border-zinc-700 dark:bg-zinc-900 dark:text-white" />
+                        : <span className="text-black dark:text-white">{h.quantity}</span>}
                     </td>
-                    <td className="px-4 py-3 text-zinc-500">{h.purchase_date}</td>
+                    <td className="px-4 py-3">
+                      {editingId === h.id
+                        ? <select value={editType} onChange={e => setEditType(e.target.value)} className="rounded border border-zinc-300 px-2 py-1 text-sm text-black outline-none focus:border-black dark:border-zinc-700 dark:bg-zinc-900 dark:text-white">
+                            {ASSET_TYPES.map(t => <option key={t}>{t}</option>)}
+                          </select>
+                        : <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">{h.type}</span>}
+                    </td>
+                    <td className="px-4 py-3">
+                      {editingId === h.id
+                        ? <input type="date" value={editDate} onChange={e => setEditDate(e.target.value)} className="rounded border border-zinc-300 px-2 py-1 text-sm text-black outline-none focus:border-black dark:border-zinc-700 dark:bg-zinc-900 dark:text-white" />
+                        : <span className="text-zinc-500">{h.purchase_date}</span>}
+                    </td>
                     <td className="px-4 py-3 text-right">
-                      <button
-                        onClick={() => handleDelete(h.id)}
-                        disabled={deletingId === h.id}
-                        className="text-zinc-400 transition-colors hover:text-red-500 disabled:opacity-40"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 256 256" fill="currentColor">
-                          <path d="M216,48H176V40a24,24,0,0,0-24-24H104A24,24,0,0,0,80,40v8H40a8,8,0,0,0,0,16h8V208a16,16,0,0,0,16,16H192a16,16,0,0,0,16-16V64h8a8,8,0,0,0,0-16ZM96,40a8,8,0,0,1,8-8h48a8,8,0,0,1,8,8v8H96Zm96,168H64V64H192ZM112,104v64a8,8,0,0,1-16,0V104a8,8,0,0,1,16,0Zm48,0v64a8,8,0,0,1-16,0V104a8,8,0,0,1,16,0Z"/>
-                        </svg>
-                      </button>
+                      {editingId === h.id ? (
+                        <div className="flex items-center justify-end gap-2">
+                          <button onClick={() => handleSaveEdit(h.id)} className="text-green-600 transition-colors hover:text-green-700">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 256 256" fill="currentColor"><path d="M173.66,98.34a8,8,0,0,1,0,11.32l-56,56a8,8,0,0,1-11.32,0l-24-24a8,8,0,0,1,11.32-11.32L112,148.69l50.34-50.35A8,8,0,0,1,173.66,98.34ZM232,128A104,104,0,1,1,128,24,104.11,104.11,0,0,1,232,128Zm-16,0a88,88,0,1,0-88,88A88.1,88.1,0,0,0,216,128Z"/></svg>
+                          </button>
+                          <button onClick={() => setEditingId(null)} className="text-zinc-400 transition-colors hover:text-zinc-600">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 256 256" fill="currentColor"><path d="M205.66,194.34a8,8,0,0,1-11.32,11.32L128,139.31,61.66,205.66a8,8,0,0,1-11.32-11.32L116.69,128,50.34,61.66A8,8,0,0,1,61.66,50.34L128,116.69l66.34-66.35a8,8,0,0,1,11.32,11.32L139.31,128Z"/></svg>
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-end gap-2">
+                          <button onClick={() => startEdit(h)} className="text-zinc-400 transition-colors hover:text-black dark:hover:text-white">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 256 256" fill="currentColor"><path d="M227.31,73.37,182.63,28.68a16,16,0,0,0-22.63,0L36.69,152A15.86,15.86,0,0,0,32,163.31V208a16,16,0,0,0,16,16H92.69A15.86,15.86,0,0,0,104,219.31L227.31,96a16,16,0,0,0,0-22.63ZM92.69,208H48V163.31l88-88L180.69,120ZM192,108.68,147.31,64l24-24L216,84.68Z"/></svg>
+                          </button>
+                          <button onClick={() => handleDelete(h.id)} disabled={deletingId === h.id} className="text-zinc-400 transition-colors hover:text-red-500 disabled:opacity-40">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 256 256" fill="currentColor"><path d="M216,48H176V40a24,24,0,0,0-24-24H104A24,24,0,0,0,80,40v8H40a8,8,0,0,0,0,16h8V208a16,16,0,0,0,16,16H192a16,16,0,0,0,16-16V64h8a8,8,0,0,0,0-16ZM96,40a8,8,0,0,1,8-8h48a8,8,0,0,1,8,8v8H96Zm96,168H64V64H192ZM112,104v64a8,8,0,0,1-16,0V104a8,8,0,0,1,16,0Zm48,0v64a8,8,0,0,1-16,0V104a8,8,0,0,1,16,0Z"/></svg>
+                          </button>
+                        </div>
+                      )}
                     </td>
                   </tr>
                 ))}
