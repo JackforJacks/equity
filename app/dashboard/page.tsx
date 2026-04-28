@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 
-type Segment = { label: string; value: number; color: string; grossValue?: number };
+type Segment = { label: string; value: number; color: string; grossValue?: number; quantity?: number };
 
 const EMPTY: Segment[] = [{ label: "Empty", value: 100, color: "#e4e4e7" }];
 
@@ -164,12 +164,14 @@ export default function Dashboard() {
                 content={({ active, payload }) => {
                   if (!active || !payload?.length || payload[0].name === "Empty") return null;
                   const seg = payload[0].payload as Segment;
-                  const detail = seg.grossValue != null
+                  const detail = seg.grossValue != null && seg.quantity != null
+                    ? `${seg.quantity} ${payload[0].name} : $${seg.grossValue.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                    : seg.grossValue != null
                     ? `$${seg.grossValue.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-                    : `${payload[0].value}%`;
+                    : `${payload[0].name}: ${payload[0].value}%`;
                   return (
                     <div style={{ borderRadius: "8px", border: "1px solid #e4e4e7", background: "#fff", padding: "6px 12px", fontSize: "13px" }}>
-                      {payload[0].name}: {detail}
+                      {detail}
                     </div>
                   );
                 }}
