@@ -273,7 +273,7 @@ export async function GET(request: Request) {
       }
       if (portReturns.length >= 3) {
         const r = pearsonCorrelation(portReturns, bmReturns);
-        benchmarkCorrelation = Math.round(((r + 1) / 2) * 100);
+        benchmarkCorrelation = parseFloat((r * 100).toFixed(1));
       }
     }
   }

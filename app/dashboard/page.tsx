@@ -237,8 +237,8 @@ export default function Dashboard() {
             <span className="text-[10px] text-zinc-400">fundamental health</span>
           </div>
           <div className="flex flex-col items-center justify-center gap-0.5 rounded-xl border-2 border-zinc-900 py-2 dark:border-zinc-700">
-            <span className="text-2xl font-bold text-black dark:text-white">
-              {benchmarkCorrelation === null ? "—" : `${benchmarkCorrelation}`}
+            <span className={`text-2xl font-bold ${benchmarkCorrelation === null ? "text-black dark:text-white" : benchmarkCorrelation >= 0 ? "text-black dark:text-white" : "text-red-500"}`}>
+              {benchmarkCorrelation === null ? "—" : `${benchmarkCorrelation > 0 ? "+" : ""}${benchmarkCorrelation.toFixed(1)}%`}
             </span>
             <span className="text-xs font-medium text-black dark:text-white">Benchmark Correlation</span>
             <span className="text-[10px] text-zinc-400">how you move with benchmark</span>
