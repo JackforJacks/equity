@@ -73,8 +73,8 @@ export default function Dashboard() {
 
       <main className="flex flex-1 flex-col overflow-hidden px-8 py-6">
        <div className="mx-auto flex flex-1 min-h-0 w-1/3 flex-col gap-2">
-        <div className="flex flex-1 min-h-0 flex-col items-center rounded-xl border-2 border-zinc-900 px-4 py-4 dark:border-zinc-700">
-        <div className="relative flex-1 min-h-0 w-full">
+        <div className="flex flex-1 min-h-0 flex-col items-center rounded-xl border-2 border-zinc-900 px-3 pt-2 pb-3 dark:border-zinc-700">
+        <div className="relative w-full" style={{ aspectRatio: "2/1" }}>
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               {/* Outer ring — individual holdings with gross value */}
