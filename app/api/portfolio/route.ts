@@ -22,6 +22,22 @@ function yahooTicker(ticker: string, exchCode: string) {
   return suffix ? `${ticker}${suffix}` : ticker;
 }
 
+async function fetchInflationRate(): Promise<number> {
+  try {
+    const res = await fetch(
+      "https://data-api.ecb.europa.eu/service/data/ICP/M.U2.N.000000.4.ANR?format=jsondata&lastNObservations=60&detail=dataonly",
+      { headers: { "Accept": "application/json" }, next: { revalidate: 86400 } }
+    );
+    const json = await res.json();
+    const obs: Record<string, number[]> = json.dataSets?.[0]?.series?.["0:0:0:0:0"]?.observations ?? {};
+    const values = Object.values(obs).map(v => v[0]).filter(v => v != null && !isNaN(v));
+    if (!values.length) return 2.8;
+    return parseFloat((values.reduce((a, b) => a + b, 0) / values.length).toFixed(2));
+  } catch {
+    return 2.8;
+  }
+}
+
 export async function GET() {
   const cookieStore = await cookies();
   const supabase = createServerClient(
@@ -53,43 +69,58 @@ export async function GET() {
   });
   const figiData: { data?: { ticker: string; exchCode: string }[] }[] = await figiRes.json();
 
-  // 2 — Fetch 1-year historical data from Yahoo Finance (gives current + year-ago price in one call)
-  const priceData = await Promise.all(
-    figiData.map(async (result) => {
-      const item = result.data?.[0];
-      if (!item?.ticker) return { current: null, yearAgo: null };
-      const symbol = yahooTicker(item.ticker, item.exchCode);
-      try {
-        const res = await fetch(
-          `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=1y`,
-          { headers: { "User-Agent": "Mozilla/5.0", "Accept": "application/json" } }
-        );
-        const json = await res.json();
-        const result = json.chart?.result?.[0];
-        const closes = result?.indicators?.quote?.[0]?.close ?? [];
-        return {
-          current: result?.meta?.regularMarketPrice ?? null,
-          yearAgo: closes.find((v: number | null) => v != null) ?? null,
-        };
-      } catch {
-        return { current: null, yearAgo: null };
-      }
-    })
-  );
+  // 2 — Fetch max monthly history + ECB inflation in parallel
+  const [priceData, avgInflation] = await Promise.all([
+    Promise.all(
+      figiData.map(async (result) => {
+        const item = result.data?.[0];
+        if (!item?.ticker) return { current: null, yearAgo: null, oldest: null, months: 0 };
+        const symbol = yahooTicker(item.ticker, item.exchCode);
+        try {
+          const res = await fetch(
+            `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1mo&range=max`,
+            { headers: { "User-Agent": "Mozilla/5.0", "Accept": "application/json" } }
+          );
+          const json = await res.json();
+          const r = json.chart?.result?.[0];
+          const closes: (number | null)[] = r?.indicators?.quote?.[0]?.close ?? [];
+          const valid = closes.filter((v): v is number => v != null);
+          const current: number | null = r?.meta?.regularMarketPrice ?? null;
+          const yearAgo: number | null = closes.length >= 13
+            ? (closes[closes.length - 13] ?? null)
+            : (closes[0] ?? null);
+          const oldest: number | null = valid[0] ?? null;
+          return { current, yearAgo, oldest, months: closes.length };
+        } catch {
+          return { current: null, yearAgo: null, oldest: null, months: 0 };
+        }
+      })
+    ),
+    fetchInflationRate(),
+  ]);
 
   // 3 — Aggregate gross value by type + compute 12-month P&L
   const typeValues: Record<string, number> = {};
   let currentTotal = 0;
   let yearAgoTotal = 0;
+  let weightedCagr = 0;
+  let cagrWeight = 0;
 
   holdings.forEach((holding, i) => {
-    const { current, yearAgo } = priceData[i];
+    const { current, yearAgo, oldest, months } = priceData[i];
     if (current != null) {
       const v = holding.quantity * current;
       typeValues[holding.type] = (typeValues[holding.type] ?? 0) + v;
       currentTotal += v;
+
+      if (oldest != null && months >= 2) {
+        const years = months / 12;
+        const cagr = (Math.pow(current / oldest, 1 / years) - 1) * 100;
+        weightedCagr += cagr * v;
+        cagrWeight += v;
+      }
     }
-    if (yearAgo != null) {
+    if (yearAgo != null && current != null) {
       yearAgoTotal += holding.quantity * yearAgo;
     }
   });
@@ -120,5 +151,20 @@ export async function GET() {
     ? parseFloat((((currentTotal - yearAgoTotal) / yearAgoTotal) * 100).toFixed(2))
     : null;
 
-  return NextResponse.json({ segments, holdings: holdingSegments, total, pnl12m });
+  const portfolioCagr = cagrWeight > 0
+    ? parseFloat((weightedCagr / cagrWeight).toFixed(2))
+    : null;
+
+  const historicalRealReturn = portfolioCagr != null
+    ? parseFloat((portfolioCagr - avgInflation).toFixed(2))
+    : null;
+
+  return NextResponse.json({
+    segments,
+    holdings: holdingSegments,
+    total,
+    pnl12m,
+    historicalRealReturn,
+    avgInflation,
+  });
 }

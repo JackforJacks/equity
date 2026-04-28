@@ -17,6 +17,7 @@ export default function Dashboard() {
   const [holdingSegments, setHoldingSegments] = useState<Segment[]>(EMPTY);
   const [total, setTotal] = useState<number | null>(null);
   const [pnl12m, setPnl12m] = useState<number | null>(null);
+  const [historicalRealReturn, setHistoricalRealReturn] = useState<number | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const [radii, setRadii] = useState({ height: 200, outer: 180, inner1: 151, inner2: 124 });
@@ -39,12 +40,13 @@ export default function Dashboard() {
   useEffect(() => {
     fetch("/api/portfolio")
       .then((r) => r.json())
-      .then((data: { segments: Segment[]; holdings: Segment[]; total: number; pnl12m: number | null }) => {
+      .then((data: { segments: Segment[]; holdings: Segment[]; total: number; pnl12m: number | null; historicalRealReturn: number | null }) => {
         if (data.segments?.length > 0) {
           setSegments(data.segments);
           setHoldingSegments(data.holdings?.length > 0 ? data.holdings : EMPTY);
           setTotal(data.total);
           setPnl12m(data.pnl12m ?? null);
+          setHistoricalRealReturn(data.historicalRealReturn ?? null);
         }
       })
       .catch(() => {});
@@ -234,7 +236,9 @@ export default function Dashboard() {
             <span className="text-[10px] text-zinc-400">worst-case projected drop</span>
           </div>
           <div className="flex flex-col items-center justify-center gap-0.5 rounded-xl border-2 border-zinc-900 py-2 dark:border-zinc-700">
-            <span className="text-2xl font-bold text-black dark:text-white">—</span>
+            <span className={`text-2xl font-bold ${historicalRealReturn === null ? "text-black dark:text-white" : historicalRealReturn >= 0 ? "text-green-600" : "text-red-500"}`}>
+              {historicalRealReturn === null ? "—" : `${historicalRealReturn >= 0 ? "+" : ""}${historicalRealReturn.toFixed(2)}%`}
+            </span>
             <span className="text-xs font-medium text-black dark:text-white">Historical Real Returns</span>
             <span className="text-[10px] text-zinc-400">past return after inflation</span>
           </div>
