@@ -169,20 +169,42 @@ function nearestPrice(closes: (number | null)[], timestamps: number[], targetTs:
   return bestDiff <= 45 * 24 * 3600 ? best : null;
 }
 
-async function fetchFMPQuality(ticker: string, apiKey: string): Promise<number | null> {
+async function fetchYahooQuality(ticker: string): Promise<number | null> {
   try {
     const res = await fetch(
-      `https://financialmodelingprep.com/api/v3/rating/${encodeURIComponent(ticker)}?apikey=${apiKey}`,
-      { next: { revalidate: 86400 } }
+      `https://query2.finance.yahoo.com/v10/finance/quoteSummary/${encodeURIComponent(ticker)}?modules=financialData,defaultKeyStatistics`,
+      { headers: { "User-Agent": "Mozilla/5.0", "Accept": "application/json" } }
     );
     if (!res.ok) return null;
     const json = await res.json();
-    if (!Array.isArray(json) || !json[0]) return null;
-    const d = json[0];
-    const scores = [d.ratingDetailsROEScore, d.ratingDetailsROAScore, d.ratingDetailsDEScore]
-      .filter((s): s is number => typeof s === "number" && s > 0);
+    const fd = json.quoteSummary?.result?.[0]?.financialData;
+    if (!fd) return null;
+
+    const clamp = (v: number, min = 0, max = 100) => Math.min(max, Math.max(min, v));
+    const scores: number[] = [];
+
+    // Profitability
+    const roe = fd.returnOnEquity?.raw;
+    const pm  = fd.profitMargins?.raw;
+    const om  = fd.operatingMargins?.raw;
+    if (roe != null) scores.push(clamp((roe / 0.25) * 100));   // 25% ROE = perfect
+    if (pm  != null) scores.push(clamp((pm  / 0.30) * 100));   // 30% net margin = perfect
+    if (om  != null) scores.push(clamp((om  / 0.25) * 100));   // 25% operating margin = perfect
+
+    // Financial health
+    const de = fd.debtToEquity?.raw; // Yahoo returns as %, e.g. 150 = 1.5x
+    const cr = fd.currentRatio?.raw;
+    if (de != null) scores.push(clamp(100 - de / 3));  // 0 D/E = 100, 300 D/E = 0
+    if (cr != null) scores.push(clamp((cr / 3) * 100)); // current ratio 3+ = 100
+
+    // Growth
+    const eg = fd.earningsGrowth?.raw;
+    const rg = fd.revenueGrowth?.raw;
+    if (eg != null) scores.push(clamp(((eg + 0.5) / 1.0) * 100)); // -50% = 0, +50% = 100
+    if (rg != null) scores.push(clamp(((rg + 0.3) / 0.6) * 100)); // -30% = 0, +30% = 100
+
     if (!scores.length) return null;
-    return Math.round((scores.reduce((a, b) => a + b, 0) / scores.length / 5) * 100);
+    return Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
   } catch {
     return null;
   }
@@ -309,24 +331,23 @@ export async function GET(request: Request) {
   const total = currentTotal;
   if (total === 0) return NextResponse.json([]);
 
-  // — Quality score via FMP ratings —
-  const fmpKey = process.env.FMP_API_KEY ?? "";
+  // — Quality score via Yahoo Finance fundamentals —
   let quality: number | null = null;
-  if (fmpKey) {
-    const qualityScores = await Promise.all(
-      figiData.map(async (result, i) => {
-        const ticker = result.data?.[0]?.ticker;
-        if (!ticker || priceData[i].current == null) return null;
-        const score = await fetchFMPQuality(ticker, fmpKey);
-        const weight = (holdings[i].quantity * (priceData[i].current ?? 0)) / total;
-        return score != null ? { score, weight } : null;
-      })
-    );
-    const valid = qualityScores.filter((q): q is { score: number; weight: number } => q != null);
-    if (valid.length > 0) {
-      const totalWeight = valid.reduce((s, q) => s + q.weight, 0);
-      quality = Math.round(valid.reduce((s, q) => s + q.score * q.weight, 0) / totalWeight);
-    }
+  const qualityScores = await Promise.all(
+    figiData.map(async (result, i) => {
+      const item = result.data?.[0];
+      if (!item || priceData[i].current == null) return null;
+      const yTicker = yahooTicker(item.ticker, item.exchCode);
+      const score = await fetchYahooQuality(yTicker);
+      const weight = (holdings[i].quantity * (priceData[i].current!)) / total;
+      return score != null ? { score, weight } : null;
+    })
+  );
+  const validQ = qualityScores.filter((q): q is { score: number; weight: number } => q != null);
+  if (validQ.length > 0) {
+    const totalWeight = validQ.reduce((s, q) => s + q.weight, 0);
+    if (totalWeight > 0)
+      quality = Math.round(validQ.reduce((s, q) => s + q.score * q.weight, 0) / totalWeight);
   }
 
   // — Shared monthly return series (correlation + Sharpe) —
