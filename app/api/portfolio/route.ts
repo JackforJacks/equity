@@ -21,13 +21,72 @@ const BENCHMARK_TICKERS: Record<string, string> = {
   "S&P 500": "^GSPC",
 };
 
+// ECB Deposit Facility Rate history [YYYY-MM, annual %]
+const ECB_DF_RATES: [string, number][] = [
+  ["1999-01", 2.00], ["1999-04", 1.50], ["1999-11", 2.00],
+  ["2000-02", 2.25], ["2000-04", 2.75], ["2000-06", 3.25],
+  ["2000-09", 3.50], ["2000-10", 3.75], ["2001-05", 3.50],
+  ["2001-08", 3.25], ["2001-09", 2.75], ["2001-11", 2.25],
+  ["2002-12", 1.75], ["2003-03", 1.50], ["2003-06", 1.00],
+  ["2005-12", 1.25], ["2006-03", 1.50], ["2006-06", 1.75],
+  ["2006-08", 2.00], ["2006-10", 2.25], ["2006-12", 2.50],
+  ["2007-03", 2.75], ["2007-06", 3.00], ["2008-10", 2.50],
+  ["2008-11", 2.00], ["2008-12", 1.50], ["2009-01", 1.00],
+  ["2009-03", 0.50], ["2009-04", 0.25], ["2011-04", 0.50],
+  ["2011-07", 0.75], ["2011-11", 0.50], ["2011-12", 0.25],
+  ["2012-07", 0.00], ["2014-06",-0.10], ["2014-09",-0.20],
+  ["2015-12",-0.30], ["2016-03",-0.40], ["2019-09",-0.50],
+  ["2022-07", 0.00], ["2022-09", 0.75], ["2022-11", 1.50],
+  ["2022-12", 2.00], ["2023-02", 2.50], ["2023-03", 3.00],
+  ["2023-05", 3.25], ["2023-06", 3.50], ["2023-08", 3.75],
+  ["2023-09", 4.00], ["2024-06", 3.75], ["2024-09", 3.50],
+  ["2024-10", 3.25], ["2024-12", 3.00],
+];
+
+type InflationData  = { rates: number[]; isMonthly: boolean; fallback: number };
+type BenchmarkPoint = { timestamp: number; close: number };
+type RatePoint      = { timestamp: number; rate: number };
+
 function yahooTicker(ticker: string, exchCode: string) {
   const suffix = EXCHANGE_SUFFIX[exchCode];
   return suffix ? `${ticker}${suffix}` : ticker;
 }
 
-type InflationData = { rates: number[]; isMonthly: boolean; fallback: number };
-type BenchmarkPoint = { timestamp: number; close: number };
+function ecbRiskFreeRates(): RatePoint[] {
+  return ECB_DF_RATES.map(([ym, rate]) => {
+    const [y, m] = ym.split("-").map(Number);
+    return { timestamp: Math.floor(new Date(y, m - 1, 1).getTime() / 1000), rate };
+  });
+}
+
+async function fetchUSRiskFreeRates(period2: number): Promise<RatePoint[]> {
+  try {
+    const res = await fetch(
+      `https://query1.finance.yahoo.com/v8/finance/chart/%5EIRX?interval=1mo&period1=0&period2=${period2}`,
+      { headers: { "User-Agent": "Mozilla/5.0", "Accept": "application/json" } }
+    );
+    const json = await res.json();
+    const r = json.chart?.result?.[0];
+    const closes: (number | null)[] = r?.indicators?.quote?.[0]?.close ?? [];
+    const timestamps: number[] = r?.timestamp ?? [];
+    const result: RatePoint[] = [];
+    for (let i = 0; i < Math.min(timestamps.length, closes.length); i++) {
+      if (closes[i] != null) result.push({ timestamp: timestamps[i], rate: closes[i] as number });
+    }
+    return result.length > 0 ? result : [{ timestamp: 0, rate: 4.0 }];
+  } catch {
+    return [{ timestamp: 0, rate: 4.0 }];
+  }
+}
+
+function riskFreeRateAt(rates: RatePoint[], targetTs: number): number {
+  let result = rates[0]?.rate ?? 2.5;
+  for (const { timestamp, rate } of rates) {
+    if (timestamp <= targetTs) result = rate;
+    else break;
+  }
+  return result;
+}
 
 async function fetchAllInflationData(country: string): Promise<InflationData> {
   if (country === "USA") {
@@ -73,9 +132,8 @@ function avgInflationForMonths(inflation: InflationData, months: number): number
   }
 }
 
-async function fetchBenchmarkData(ticker: string): Promise<BenchmarkPoint[]> {
+async function fetchBenchmarkData(ticker: string, period2: number): Promise<BenchmarkPoint[]> {
   try {
-    const period2 = Math.floor(Date.now() / 1000);
     const res = await fetch(
       `https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?interval=1mo&period1=0&period2=${period2}`,
       { headers: { "User-Agent": "Mozilla/5.0", "Accept": "application/json" } }
@@ -101,16 +159,12 @@ function benchmarkPriceAt(data: BenchmarkPoint[], targetTs: number): number | nu
   return data[idx].close;
 }
 
-// Find nearest non-null price within 45 days of target timestamp
 function nearestPrice(closes: (number | null)[], timestamps: number[], targetTs: number): number | null {
   let best: number | null = null;
   let bestDiff = Infinity;
   for (let i = 0; i < timestamps.length; i++) {
     const diff = Math.abs(timestamps[i] - targetTs);
-    if (diff < bestDiff && closes[i] != null) {
-      bestDiff = diff;
-      best = closes[i] as number;
-    }
+    if (diff < bestDiff && closes[i] != null) { bestDiff = diff; best = closes[i] as number; }
   }
   return bestDiff <= 45 * 24 * 3600 ? best : null;
 }
@@ -131,8 +185,8 @@ function pearsonCorrelation(x: number[], y: number[]): number {
 
 export async function GET(request: Request) {
   const params = new URL(request.url).searchParams;
-  const country       = params.get("country")   ?? "Italy";
-  const benchmarkName = params.get("benchmark") ?? "S&P 500";
+  const country         = params.get("country")   ?? "Italy";
+  const benchmarkName   = params.get("benchmark") ?? "S&P 500";
   const benchmarkTicker = BENCHMARK_TICKERS[benchmarkName] ?? "^GSPC";
 
   const cookieStore = await cookies();
@@ -166,7 +220,7 @@ export async function GET(request: Request) {
 
   const period2 = Math.floor(Date.now() / 1000);
 
-  const [priceData, inflationData, benchmarkData] = await Promise.all([
+  const [priceData, inflationData, benchmarkData, rfRates] = await Promise.all([
     Promise.all(
       figiData.map(async (result) => {
         const item = result.data?.[0];
@@ -188,8 +242,7 @@ export async function GET(request: Request) {
           const startTimestamp = firstValidIdx >= 0 && timestamps[firstValidIdx] ? timestamps[firstValidIdx] : 0;
           const endTimestamp = timestamps[timestamps.length - 1] ?? 0;
           const actualYears = startTimestamp > 0 && endTimestamp > startTimestamp
-            ? (endTimestamp - startTimestamp) / (365.25 * 24 * 3600)
-            : 0;
+            ? (endTimestamp - startTimestamp) / (365.25 * 24 * 3600) : 0;
           return { current, yearAgo, oldest, actualYears, startTimestamp, closes, timestamps };
         } catch {
           return { current: null, yearAgo: null, oldest: null, actualYears: 0, startTimestamp: 0, closes: [] as (number | null)[], timestamps: [] as number[] };
@@ -197,14 +250,14 @@ export async function GET(request: Request) {
       })
     ),
     fetchAllInflationData(country),
-    fetchBenchmarkData(benchmarkTicker),
+    fetchBenchmarkData(benchmarkTicker, period2),
+    country === "USA" ? fetchUSRiskFreeRates(period2) : Promise.resolve(ecbRiskFreeRates()),
   ]);
 
   const benchmarkCurrentClose = benchmarkData.length > 0 ? benchmarkData[benchmarkData.length - 1].close : null;
 
   const typeValues: Record<string, number> = {};
-  let currentTotal = 0;
-  let yearAgoTotal = 0;
+  let currentTotal = 0, yearAgoTotal = 0;
   let weightedRealCagr = 0, cagrWeight = 0;
   let weightedEdge = 0, edgeWeight = 0;
 
@@ -231,17 +284,13 @@ export async function GET(request: Request) {
         }
       }
     }
-    if (yearAgo != null && current != null) {
-      yearAgoTotal += holding.quantity * yearAgo;
-    }
+    if (yearAgo != null && current != null) yearAgoTotal += holding.quantity * yearAgo;
   });
 
   const total = currentTotal;
   if (total === 0) return NextResponse.json([]);
 
-  // — Shared monthly return series for correlation + Sharpe —
-  const RISK_FREE_RATE = country === "USA" ? 4.0 : 2.5; // annual %, based on 10yr govt bond
-
+  // — Shared monthly return series (correlation + Sharpe) —
   const overlapStart = Math.max(...priceData.map(pd => pd.startTimestamp).filter(t => t > 0));
   const overlapTimestamps = benchmarkData.filter(d => d.timestamp >= overlapStart).map(d => d.timestamp);
 
@@ -258,6 +307,7 @@ export async function GET(request: Request) {
 
     const portReturns: number[] = [];
     const bmReturns: number[] = [];
+    const returnTimestamps: number[] = [];
 
     for (let i = 1; i < overlapTimestamps.length; i++) {
       const pPrev = portfolioValues[i - 1], pNext = portfolioValues[i];
@@ -266,20 +316,22 @@ export async function GET(request: Request) {
       if (pPrev > 0 && pNext > 0 && bPrev > 0 && bNext > 0) {
         portReturns.push(pNext / pPrev - 1);
         bmReturns.push(bNext / bPrev - 1);
+        returnTimestamps.push(overlapTimestamps[i]);
       }
     }
 
     if (portReturns.length >= 3) {
-      // Benchmark Correlation
-      const r = pearsonCorrelation(portReturns, bmReturns);
-      benchmarkCorrelation = parseFloat((r * 100).toFixed(1));
+      benchmarkCorrelation = parseFloat((pearsonCorrelation(portReturns, bmReturns) * 100).toFixed(1));
 
-      // Return on Risk (Sharpe Ratio → 0-100)
       if (portReturns.length >= 12) {
-        const rfMonthly = RISK_FREE_RATE / 100 / 12;
-        const excess = portReturns.map(r => r - rfMonthly);
+        // Time-varying risk-free rate: match each monthly return to its period rate
+        const excess = portReturns.map((r, idx) => {
+          const ts = returnTimestamps[idx];
+          const rfAnnual = riskFreeRateAt(rfRates, ts);
+          return r - rfAnnual / 100 / 12;
+        });
         const meanExcess = excess.reduce((a, b) => a + b, 0) / excess.length;
-        const variance = excess.reduce((s, r) => s + (r - meanExcess) ** 2, 0) / excess.length;
+        const variance = excess.reduce((s, e) => s + (e - meanExcess) ** 2, 0) / excess.length;
         const sharpe = variance > 0 ? (meanExcess / Math.sqrt(variance)) * Math.sqrt(12) : 0;
         returnOnRisk = Math.min(100, Math.max(0, Math.round((sharpe / 3) * 100)));
       }
@@ -306,16 +358,11 @@ export async function GET(request: Request) {
   }).filter(Boolean);
 
   const pnl12m = yearAgoTotal > 0
-    ? parseFloat((((currentTotal - yearAgoTotal) / yearAgoTotal) * 100).toFixed(2))
-    : null;
-
+    ? parseFloat((((currentTotal - yearAgoTotal) / yearAgoTotal) * 100).toFixed(2)) : null;
   const historicalRealReturn = cagrWeight > 0
-    ? parseFloat((weightedRealCagr / cagrWeight).toFixed(2))
-    : null;
-
+    ? parseFloat((weightedRealCagr / cagrWeight).toFixed(2)) : null;
   const edgeOnBenchmark = edgeWeight > 0
-    ? parseFloat((weightedEdge / edgeWeight).toFixed(2))
-    : null;
+    ? parseFloat((weightedEdge / edgeWeight).toFixed(2)) : null;
 
   return NextResponse.json({
     segments, holdings: holdingSegments, total,
