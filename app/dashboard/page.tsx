@@ -13,6 +13,7 @@ export default function Dashboard() {
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const [currency, setCurrency] = useState("EUR");
+  const [country, setCountry] = useState("Italy");
   const [segments, setSegments] = useState<Segment[]>(EMPTY);
   const [holdingSegments, setHoldingSegments] = useState<Segment[]>(EMPTY);
   const [total, setTotal] = useState<number | null>(null);
@@ -38,7 +39,7 @@ export default function Dashboard() {
   }, []);
 
   useEffect(() => {
-    fetch("/api/portfolio")
+    fetch(`/api/portfolio?country=${country}`)
       .then((r) => r.json())
       .then((data: { segments: Segment[]; holdings: Segment[]; total: number; pnl12m: number | null; historicalRealReturn: number | null }) => {
         if (data.segments?.length > 0) {
@@ -50,7 +51,7 @@ export default function Dashboard() {
         }
       })
       .catch(() => {});
-  }, []);
+  }, [country]);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -101,8 +102,13 @@ export default function Dashboard() {
               </div>
               <div className="flex items-center justify-between gap-3">
                 <span className="text-sm text-zinc-600 dark:text-zinc-400">Country</span>
-                <select className="rounded-lg border border-zinc-200 bg-white px-2 py-1 text-sm text-black outline-none dark:border-zinc-700 dark:bg-zinc-900 dark:text-white">
+                <select
+                  value={country}
+                  onChange={(e) => setCountry(e.target.value)}
+                  className="rounded-lg border border-zinc-200 bg-white px-2 py-1 text-sm text-black outline-none dark:border-zinc-700 dark:bg-zinc-900 dark:text-white"
+                >
                   <option>Italy</option>
+                  <option>USA</option>
                 </select>
               </div>
             </div>

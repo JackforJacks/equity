@@ -22,7 +22,7 @@ function yahooTicker(ticker: string, exchCode: string) {
   return suffix ? `${ticker}${suffix}` : ticker;
 }
 
-async function fetchInflationRate(): Promise<number> {
+async function fetchECBInflation(): Promise<number> {
   try {
     const res = await fetch(
       "https://data-api.ecb.europa.eu/service/data/ICP/M.U2.N.000000.4.ANR?format=jsondata&lastNObservations=60&detail=dataonly",
@@ -38,7 +38,29 @@ async function fetchInflationRate(): Promise<number> {
   }
 }
 
-export async function GET() {
+async function fetchUSInflation(): Promise<number> {
+  try {
+    const res = await fetch(
+      "https://api.worldbank.org/v2/country/US/indicator/FP.CPI.TOTL.ZG?format=json&mrv=5&per_page=5",
+      { next: { revalidate: 86400 } }
+    );
+    const json = await res.json();
+    const values: number[] = (json[1] ?? [])
+      .map((d: { value: number | null }) => d.value)
+      .filter((v: number | null): v is number => v != null);
+    if (!values.length) return 3.5;
+    return parseFloat((values.reduce((a, b) => a + b, 0) / values.length).toFixed(2));
+  } catch {
+    return 3.5;
+  }
+}
+
+async function fetchInflationRate(country: string): Promise<number> {
+  return country === "USA" ? fetchUSInflation() : fetchECBInflation();
+}
+
+export async function GET(request: Request) {
+  const country = new URL(request.url).searchParams.get("country") ?? "Italy";
   const cookieStore = await cookies();
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -96,7 +118,7 @@ export async function GET() {
         }
       })
     ),
-    fetchInflationRate(),
+    fetchInflationRate(country),
   ]);
 
   // 3 — Aggregate gross value by type + compute 12-month P&L
