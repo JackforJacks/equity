@@ -148,21 +148,22 @@ export default function Dashboard() {
             </PieChart>
           </ResponsiveContainer>
 
-          {pnl12m !== null && (
-            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 text-center">
-              <p className={`text-3xl font-bold ${pnl12m >= 0 ? "text-green-600" : "text-red-500"}`}>
-                {pnl12m >= 0 ? "+" : ""}{pnl12m.toFixed(2)}%
+          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 text-center whitespace-nowrap">
+            {total !== null && (
+              <p style={{ fontSize: radii.outer * 0.16, fontWeight: 600 }} className="text-black dark:text-white leading-tight">
+                {total.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 2 })}
               </p>
-              <p className="text-[10px] text-zinc-400">in the last 12 months</p>
-            </div>
-          )}
+            )}
+            {pnl12m !== null && (
+              <>
+                <p style={{ fontSize: radii.outer * 0.12, fontWeight: 700 }} className={`leading-tight ${pnl12m >= 0 ? "text-green-600" : "text-red-500"}`}>
+                  {pnl12m >= 0 ? "+" : ""}{pnl12m.toFixed(2)}%
+                </p>
+                <p style={{ fontSize: radii.outer * 0.055 }} className="text-zinc-400">in the last 12 months</p>
+              </>
+            )}
+          </div>
         </div>
-
-        {total !== null && (
-          <p className="mt-1 text-3xl font-semibold text-black dark:text-white">
-            {total.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 2 })}
-          </p>
-        )}
         </div>
 
         <div className="grid flex-1 min-h-0 grid-cols-2 [grid-template-rows:repeat(4,minmax(0,1fr))] gap-2">
