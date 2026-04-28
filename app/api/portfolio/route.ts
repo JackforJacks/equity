@@ -109,7 +109,7 @@ export async function GET(request: Request) {
         if (!item?.ticker) return { current: null, yearAgo: null, oldest: null, actualYears: 0 };
         const symbol = yahooTicker(item.ticker, item.exchCode);
         try {
-          const period1 = 631152000; // Jan 1 1990
+          const period1 = 0; // oldest available data point (Unix epoch)
           const period2 = Math.floor(Date.now() / 1000);
           const res = await fetch(
             `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1mo&period1=${period1}&period2=${period2}`,
