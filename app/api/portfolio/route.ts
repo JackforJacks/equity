@@ -106,23 +106,29 @@ export async function GET(request: Request) {
     Promise.all(
       figiData.map(async (result) => {
         const item = result.data?.[0];
-        if (!item?.ticker) return { current: null, yearAgo: null, oldest: null, months: 0 };
+        if (!item?.ticker) return { current: null, yearAgo: null, oldest: null, actualYears: 0 };
         const symbol = yahooTicker(item.ticker, item.exchCode);
         try {
+          const period1 = 631152000; // Jan 1 1990
+          const period2 = Math.floor(Date.now() / 1000);
           const res = await fetch(
-            `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1mo&range=max`,
+            `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1mo&period1=${period1}&period2=${period2}`,
             { headers: { "User-Agent": "Mozilla/5.0", "Accept": "application/json" } }
           );
           const json = await res.json();
           const r = json.chart?.result?.[0];
           const closes: (number | null)[] = r?.indicators?.quote?.[0]?.close ?? [];
-          const valid = closes.filter((v): v is number => v != null);
+          const timestamps: number[] = r?.timestamp ?? [];
           const current: number | null = r?.meta?.regularMarketPrice ?? null;
           const yearAgo: number | null = closes.length >= 13 ? (closes[closes.length - 13] ?? null) : (closes[0] ?? null);
-          const oldest: number | null = valid[0] ?? null;
-          return { current, yearAgo, oldest, months: closes.length };
+          const firstValidIdx = closes.findIndex((v): v is number => v != null);
+          const oldest: number | null = firstValidIdx >= 0 ? (closes[firstValidIdx] as number) : null;
+          const actualYears = firstValidIdx >= 0 && timestamps.length > firstValidIdx
+            ? (timestamps[timestamps.length - 1] - timestamps[firstValidIdx]) / (365.25 * 24 * 3600)
+            : 0;
+          return { current, yearAgo, oldest, actualYears };
         } catch {
-          return { current: null, yearAgo: null, oldest: null, months: 0 };
+          return { current: null, yearAgo: null, oldest: null, actualYears: 0 };
         }
       })
     ),
@@ -137,16 +143,15 @@ export async function GET(request: Request) {
   let cagrWeight = 0;
 
   holdings.forEach((holding, i) => {
-    const { current, yearAgo, oldest, months } = priceData[i];
+    const { current, yearAgo, oldest, actualYears } = priceData[i];
     if (current != null) {
       const v = holding.quantity * current;
       typeValues[holding.type] = (typeValues[holding.type] ?? 0) + v;
       currentTotal += v;
 
-      if (oldest != null && months >= 2 && oldest > 0) {
-        const years = months / 12;
-        const nominalCagr = (Math.pow(current / oldest, 1 / years) - 1) * 100;
-        const inflationForPeriod = avgInflationForMonths(inflationData, months);
+      if (oldest != null && actualYears >= 1 && oldest > 0) {
+        const nominalCagr = (Math.pow(current / oldest, 1 / actualYears) - 1) * 100;
+        const inflationForPeriod = avgInflationForMonths(inflationData, Math.round(actualYears * 12));
         const realCagr = nominalCagr - inflationForPeriod;
         weightedRealCagr += realCagr * v;
         cagrWeight += v;
