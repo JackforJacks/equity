@@ -73,9 +73,9 @@ export default function Dashboard() {
 
       <main className="flex flex-1 flex-col overflow-hidden px-8 py-6">
        <div className="mx-auto flex flex-1 min-h-0 w-1/3 flex-col gap-2">
-        <div className="flex flex-col items-center justify-center rounded-xl border-2 border-zinc-900 px-4 py-4 dark:border-zinc-700">
-        <div className="relative w-full">
-          <ResponsiveContainer width="100%" height={290}>
+        <div className="flex flex-1 min-h-0 flex-col items-center rounded-xl border-2 border-zinc-900 px-4 py-4 dark:border-zinc-700">
+        <div className="relative flex-1 min-h-0 w-full">
+          <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               {/* Outer ring — individual holdings with gross value */}
               <Pie
@@ -86,8 +86,8 @@ export default function Dashboard() {
                 endAngle={0}
                 cx="50%"
                 cy="100%"
-                outerRadius={140}
-                innerRadius={118}
+                outerRadius="92%"
+                innerRadius="76%"
                 paddingAngle={holdingSegments === EMPTY ? 0 : 2}
                 fill="#e4e4e7"
               >
@@ -104,8 +104,8 @@ export default function Dashboard() {
                 endAngle={0}
                 cx="50%"
                 cy="100%"
-                outerRadius={118}
-                innerRadius={98}
+                outerRadius="76%"
+                innerRadius="62%"
                 paddingAngle={isEmpty ? 0 : 2}
                 fill="#e4e4e7"
               >
