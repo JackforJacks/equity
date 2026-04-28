@@ -173,7 +173,8 @@ export default function Dashboard() {
                 innerRadius={radii.inner1}
                 paddingAngle={0}
                 fill="#e4e4e7"
-                stroke="none"
+                stroke="#18181b"
+                strokeWidth={1}
               >
                 {holdingSegments.map((s) => (
                   <Cell key={s.label} fill={s.color} />
@@ -192,7 +193,8 @@ export default function Dashboard() {
                 innerRadius={radii.inner2}
                 paddingAngle={0}
                 fill="#e4e4e7"
-                stroke="none"
+                stroke="#18181b"
+                strokeWidth={1}
               >
                 {segments.map((s) => (
                   <Cell key={s.label} fill={s.color} />
