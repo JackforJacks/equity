@@ -169,45 +169,27 @@ function nearestPrice(closes: (number | null)[], timestamps: number[], targetTs:
   return bestDiff <= 45 * 24 * 3600 ? best : null;
 }
 
-async function fetchYahooQuality(ticker: string): Promise<number | null> {
-  try {
-    const res = await fetch(
-      `https://query2.finance.yahoo.com/v10/finance/quoteSummary/${encodeURIComponent(ticker)}?modules=financialData,defaultKeyStatistics`,
-      { headers: { "User-Agent": "Mozilla/5.0", "Accept": "application/json" } }
-    );
-    if (!res.ok) return null;
-    const json = await res.json();
-    const fd = json.quoteSummary?.result?.[0]?.financialData;
-    if (!fd) return null;
+function computeAssetQuality(closes: (number | null)[], actualYears: number): number | null {
+  const valid = closes.filter((v): v is number => v != null && v > 0);
+  if (valid.length < 12) return null;
 
-    const clamp = (v: number, min = 0, max = 100) => Math.min(max, Math.max(min, v));
-    const scores: number[] = [];
+  const returns: number[] = [];
+  for (let i = 1; i < valid.length; i++) returns.push(valid[i] / valid[i - 1] - 1);
+  if (returns.length < 12) return null;
 
-    // Profitability
-    const roe = fd.returnOnEquity?.raw;
-    const pm  = fd.profitMargins?.raw;
-    const om  = fd.operatingMargins?.raw;
-    if (roe != null) scores.push(clamp((roe / 0.25) * 100));   // 25% ROE = perfect
-    if (pm  != null) scores.push(clamp((pm  / 0.30) * 100));   // 30% net margin = perfect
-    if (om  != null) scores.push(clamp((om  / 0.25) * 100));   // 25% operating margin = perfect
+  // Stability: inverse annualised volatility (0% vol = 100, 60%+ = 0)
+  const mean = returns.reduce((a, b) => a + b, 0) / returns.length;
+  const variance = returns.reduce((s, r) => s + (r - mean) ** 2, 0) / returns.length;
+  const annualVol = Math.sqrt(variance * 12) * 100;
+  const stability = Math.min(100, Math.max(0, (1 - annualVol / 60) * 100));
 
-    // Financial health
-    const de = fd.debtToEquity?.raw; // Yahoo returns as %, e.g. 150 = 1.5x
-    const cr = fd.currentRatio?.raw;
-    if (de != null) scores.push(clamp(100 - de / 3));  // 0 D/E = 100, 300 D/E = 0
-    if (cr != null) scores.push(clamp((cr / 3) * 100)); // current ratio 3+ = 100
+  // Track record: 0 years = 0, 20+ years = 100
+  const trackRecord = Math.min(100, (actualYears / 20) * 100);
 
-    // Growth
-    const eg = fd.earningsGrowth?.raw;
-    const rg = fd.revenueGrowth?.raw;
-    if (eg != null) scores.push(clamp(((eg + 0.5) / 1.0) * 100)); // -50% = 0, +50% = 100
-    if (rg != null) scores.push(clamp(((rg + 0.3) / 0.6) * 100)); // -30% = 0, +30% = 100
+  // Consistency: % of positive months
+  const consistency = (returns.filter(r => r > 0).length / returns.length) * 100;
 
-    if (!scores.length) return null;
-    return Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
-  } catch {
-    return null;
-  }
+  return Math.round(stability * 0.40 + trackRecord * 0.30 + consistency * 0.30);
 }
 
 function pearsonCorrelation(x: number[], y: number[]): number {
@@ -331,23 +313,20 @@ export async function GET(request: Request) {
   const total = currentTotal;
   if (total === 0) return NextResponse.json([]);
 
-  // — Quality score via Yahoo Finance fundamentals —
+  // — Quality score: stability + track record + consistency (works for all asset types) —
   let quality: number | null = null;
-  const qualityScores = await Promise.all(
-    figiData.map(async (result, i) => {
-      const item = result.data?.[0];
-      if (!item || priceData[i].current == null) return null;
-      const yTicker = yahooTicker(item.ticker, item.exchCode);
-      const score = await fetchYahooQuality(yTicker);
-      const weight = (holdings[i].quantity * (priceData[i].current!)) / total;
-      return score != null ? { score, weight } : null;
-    })
-  );
-  const validQ = qualityScores.filter((q): q is { score: number; weight: number } => q != null);
-  if (validQ.length > 0) {
-    const totalWeight = validQ.reduce((s, q) => s + q.weight, 0);
+  const qualityScores = holdings.map((holding, i) => {
+    const { current, closes, actualYears } = priceData[i];
+    if (current == null) return null;
+    const score = computeAssetQuality(closes, actualYears);
+    const weight = (holding.quantity * current) / total;
+    return score != null ? { score, weight } : null;
+  }).filter((q): q is { score: number; weight: number } => q != null);
+
+  if (qualityScores.length > 0) {
+    const totalWeight = qualityScores.reduce((s, q) => s + q.weight, 0);
     if (totalWeight > 0)
-      quality = Math.round(validQ.reduce((s, q) => s + q.score * q.weight, 0) / totalWeight);
+      quality = Math.round(qualityScores.reduce((s, q) => s + q.score * q.weight, 0) / totalWeight);
   }
 
   // — Shared monthly return series (correlation + Sharpe) —
