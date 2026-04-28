@@ -22,45 +22,55 @@ function yahooTicker(ticker: string, exchCode: string) {
   return suffix ? `${ticker}${suffix}` : ticker;
 }
 
-async function fetchECBInflation(): Promise<number> {
-  try {
-    const res = await fetch(
-      "https://data-api.ecb.europa.eu/service/data/ICP/M.U2.N.000000.4.ANR?format=jsondata&lastNObservations=60&detail=dataonly",
-      { headers: { "Accept": "application/json" }, next: { revalidate: 86400 } }
-    );
-    const json = await res.json();
-    const obs: Record<string, number[]> = json.dataSets?.[0]?.series?.["0:0:0:0:0"]?.observations ?? {};
-    const values = Object.values(obs).map(v => v[0]).filter(v => v != null && !isNaN(v));
-    if (!values.length) return 2.8;
-    return parseFloat((values.reduce((a, b) => a + b, 0) / values.length).toFixed(2));
-  } catch {
-    return 2.8;
+type InflationData = { rates: number[]; isMonthly: boolean; fallback: number };
+
+async function fetchAllInflationData(country: string): Promise<InflationData> {
+  if (country === "USA") {
+    try {
+      const res = await fetch(
+        "https://api.worldbank.org/v2/country/US/indicator/FP.CPI.TOTL.ZG?format=json&mrv=30&per_page=30",
+        { next: { revalidate: 86400 } }
+      );
+      const json = await res.json();
+      const rates: number[] = (json[1] ?? [])
+        .map((d: { value: number | null }) => d.value)
+        .filter((v: number | null): v is number => v != null)
+        .reverse();
+      return { rates, isMonthly: false, fallback: 3.5 };
+    } catch {
+      return { rates: [], isMonthly: false, fallback: 3.5 };
+    }
+  } else {
+    try {
+      const res = await fetch(
+        "https://data-api.ecb.europa.eu/service/data/ICP/M.U2.N.000000.4.ANR?format=jsondata&detail=dataonly",
+        { headers: { "Accept": "application/json" }, next: { revalidate: 86400 } }
+      );
+      const json = await res.json();
+      const obs: Record<string, number[]> = json.dataSets?.[0]?.series?.["0:0:0:0:0"]?.observations ?? {};
+      const rates = Object.values(obs).map(v => v[0]).filter(v => v != null && !isNaN(v));
+      return { rates, isMonthly: true, fallback: 2.8 };
+    } catch {
+      return { rates: [], isMonthly: true, fallback: 2.8 };
+    }
   }
 }
 
-async function fetchUSInflation(): Promise<number> {
-  try {
-    const res = await fetch(
-      "https://api.worldbank.org/v2/country/US/indicator/FP.CPI.TOTL.ZG?format=json&mrv=5&per_page=5",
-      { next: { revalidate: 86400 } }
-    );
-    const json = await res.json();
-    const values: number[] = (json[1] ?? [])
-      .map((d: { value: number | null }) => d.value)
-      .filter((v: number | null): v is number => v != null);
-    if (!values.length) return 3.5;
-    return parseFloat((values.reduce((a, b) => a + b, 0) / values.length).toFixed(2));
-  } catch {
-    return 3.5;
+function avgInflationForMonths(inflation: InflationData, months: number): number {
+  if (!inflation.rates.length) return inflation.fallback;
+  if (inflation.isMonthly) {
+    const slice = inflation.rates.slice(-Math.min(months, inflation.rates.length));
+    return slice.reduce((a, b) => a + b, 0) / slice.length;
+  } else {
+    const years = Math.max(1, Math.ceil(months / 12));
+    const slice = inflation.rates.slice(-Math.min(years, inflation.rates.length));
+    return slice.reduce((a, b) => a + b, 0) / slice.length;
   }
-}
-
-async function fetchInflationRate(country: string): Promise<number> {
-  return country === "USA" ? fetchUSInflation() : fetchECBInflation();
 }
 
 export async function GET(request: Request) {
   const country = new URL(request.url).searchParams.get("country") ?? "Italy";
+
   const cookieStore = await cookies();
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -91,8 +101,8 @@ export async function GET(request: Request) {
   });
   const figiData: { data?: { ticker: string; exchCode: string }[] }[] = await figiRes.json();
 
-  // 2 — Fetch max monthly history + ECB inflation in parallel
-  const [priceData, avgInflation] = await Promise.all([
+  // 2 — Fetch max monthly history + full inflation history in parallel
+  const [priceData, inflationData] = await Promise.all([
     Promise.all(
       figiData.map(async (result) => {
         const item = result.data?.[0];
@@ -108,9 +118,7 @@ export async function GET(request: Request) {
           const closes: (number | null)[] = r?.indicators?.quote?.[0]?.close ?? [];
           const valid = closes.filter((v): v is number => v != null);
           const current: number | null = r?.meta?.regularMarketPrice ?? null;
-          const yearAgo: number | null = closes.length >= 13
-            ? (closes[closes.length - 13] ?? null)
-            : (closes[0] ?? null);
+          const yearAgo: number | null = closes.length >= 13 ? (closes[closes.length - 13] ?? null) : (closes[0] ?? null);
           const oldest: number | null = valid[0] ?? null;
           return { current, yearAgo, oldest, months: closes.length };
         } catch {
@@ -118,14 +126,14 @@ export async function GET(request: Request) {
         }
       })
     ),
-    fetchInflationRate(country),
+    fetchAllInflationData(country),
   ]);
 
-  // 3 — Aggregate gross value by type + compute 12-month P&L
+  // 3 — Aggregate values and compute metrics
   const typeValues: Record<string, number> = {};
   let currentTotal = 0;
   let yearAgoTotal = 0;
-  let weightedCagr = 0;
+  let weightedRealCagr = 0;
   let cagrWeight = 0;
 
   holdings.forEach((holding, i) => {
@@ -135,10 +143,12 @@ export async function GET(request: Request) {
       typeValues[holding.type] = (typeValues[holding.type] ?? 0) + v;
       currentTotal += v;
 
-      if (oldest != null && months >= 2) {
+      if (oldest != null && months >= 2 && oldest > 0) {
         const years = months / 12;
-        const cagr = (Math.pow(current / oldest, 1 / years) - 1) * 100;
-        weightedCagr += cagr * v;
+        const nominalCagr = (Math.pow(current / oldest, 1 / years) - 1) * 100;
+        const inflationForPeriod = avgInflationForMonths(inflationData, months);
+        const realCagr = nominalCagr - inflationForPeriod;
+        weightedRealCagr += realCagr * v;
         cagrWeight += v;
       }
     }
@@ -173,20 +183,9 @@ export async function GET(request: Request) {
     ? parseFloat((((currentTotal - yearAgoTotal) / yearAgoTotal) * 100).toFixed(2))
     : null;
 
-  const portfolioCagr = cagrWeight > 0
-    ? parseFloat((weightedCagr / cagrWeight).toFixed(2))
+  const historicalRealReturn = cagrWeight > 0
+    ? parseFloat((weightedRealCagr / cagrWeight).toFixed(2))
     : null;
 
-  const historicalRealReturn = portfolioCagr != null
-    ? parseFloat((portfolioCagr - avgInflation).toFixed(2))
-    : null;
-
-  return NextResponse.json({
-    segments,
-    holdings: holdingSegments,
-    total,
-    pnl12m,
-    historicalRealReturn,
-    avgInflation,
-  });
+  return NextResponse.json({ segments, holdings: holdingSegments, total, pnl12m, historicalRealReturn });
 }
