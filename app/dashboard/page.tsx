@@ -86,7 +86,6 @@ export default function Dashboard() {
     router.push("/");
   }
 
-  const isEmpty = segments === EMPTY;
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-white dark:bg-black">
@@ -172,7 +171,7 @@ export default function Dashboard() {
                 cy="100%"
                 outerRadius={radii.outer}
                 innerRadius={radii.inner1}
-                paddingAngle={holdingSegments === EMPTY ? 0 : 2}
+                paddingAngle={0}
                 fill="#e4e4e7"
                 stroke="none"
               >
@@ -191,7 +190,7 @@ export default function Dashboard() {
                 cy="100%"
                 outerRadius={radii.inner1}
                 innerRadius={radii.inner2}
-                paddingAngle={isEmpty ? 0 : 2}
+                paddingAngle={0}
                 fill="#e4e4e7"
                 stroke="none"
               >
