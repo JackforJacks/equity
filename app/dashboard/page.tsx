@@ -215,7 +215,7 @@ export default function Dashboard() {
           <div className="h-10 w-10 animate-spin rounded-full border-4 border-zinc-200 border-t-black dark:border-zinc-800 dark:border-t-white" />
         </div>
       )}
-      <div className="fixed top-3 right-3 z-10" ref={menuRef}>
+      <div className="fixed top-1 right-1 z-10" ref={menuRef}>
         <button
           onClick={() => setMenuOpen((v) => !v)}
           className="flex h-9 w-9 items-center justify-center rounded-full border border-black bg-white text-black transition-colors hover:bg-zinc-100 dark:border-white dark:bg-black dark:text-white dark:hover:bg-zinc-900"
