@@ -59,12 +59,21 @@ export default function Dashboard() {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      const { data } = await supabase
-        .from("financial_profile")
-        .select("monthly_income, monthly_expenses, liquid_cash, real_estate, pension, other_assets, liabilities")
-        .eq("user_id", user.id)
-        .maybeSingle();
-      if (data) setProfile(data);
+      const [profileRes, incomeRes, expenseRes] = await Promise.all([
+        supabase.from("financial_profile").select("liquid_cash, real_estate, pension, other_assets, liabilities").eq("user_id", user.id).maybeSingle(),
+        supabase.from("income_sources").select("amount").eq("user_id", user.id),
+        supabase.from("monthly_expenses").select("amount").eq("user_id", user.id),
+      ]);
+      const monthly_income = (incomeRes.data ?? []).reduce((s: number, r: { amount: number }) => s + Number(r.amount), 0);
+      const monthly_expenses = (expenseRes.data ?? []).reduce((s: number, r: { amount: number }) => s + Number(r.amount), 0);
+      setProfile({
+        monthly_income, monthly_expenses,
+        liquid_cash: profileRes.data?.liquid_cash ?? 0,
+        real_estate: profileRes.data?.real_estate ?? 0,
+        pension: profileRes.data?.pension ?? 0,
+        other_assets: profileRes.data?.other_assets ?? 0,
+        liabilities: profileRes.data?.liabilities ?? 0,
+      });
     }
     loadProfile();
   }, []);

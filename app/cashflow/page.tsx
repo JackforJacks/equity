@@ -4,60 +4,38 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
 
-type Cashflow = {
-  monthly_income: number;
-  monthly_expenses: number;
-};
+const INCOME_TYPES   = ["Salary", "Freelance", "Business", "Dividends", "Rental", "Pension", "Other"];
+const EXPENSE_TYPES  = ["Housing", "Food", "Transportation", "Utilities", "Insurance", "Healthcare", "Subscriptions", "Entertainment", "Education", "Personal", "Other"];
 
-const EMPTY: Cashflow = { monthly_income: 0, monthly_expenses: 0 };
+type Entry = { id: string; type: string; amount: number };
 
 export default function CashflowPage() {
   const router = useRouter();
-  const [data, setData] = useState<Cashflow>(EMPTY);
+  const [income, setIncome] = useState<Entry[]>([]);
+  const [expenses, setExpenses] = useState<Entry[]>([]);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const [error, setError] = useState("");
 
   const supabase = createClient();
 
-  useEffect(() => {
-    async function load() {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      const { data: row } = await supabase
-        .from("financial_profile")
-        .select("monthly_income, monthly_expenses")
-        .eq("user_id", user.id)
-        .maybeSingle();
-      if (row) setData({ ...EMPTY, ...row });
-      setLoading(false);
-    }
-    load();
-  }, []);
-
-  async function handleSave(e: React.FormEvent) {
-    e.preventDefault();
-    setError("");
-    setSaving(true);
-    setSaved(false);
+  async function loadAll() {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { setError("Not authenticated"); setSaving(false); return; }
-    const { error: err } = await supabase
-      .from("financial_profile")
-      .upsert({ user_id: user.id, ...data });
-    setSaving(false);
-    if (err) { setError(err.message); return; }
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+    if (!user) return;
+    const [incRes, expRes] = await Promise.all([
+      supabase.from("income_sources").select("id, type, amount").eq("user_id", user.id).order("created_at", { ascending: false }),
+      supabase.from("monthly_expenses").select("id, type, amount").eq("user_id", user.id).order("created_at", { ascending: false }),
+    ]);
+    setIncome(incRes.data ?? []);
+    setExpenses(expRes.data ?? []);
+    setLoading(false);
   }
 
-  function update(key: keyof Cashflow, value: string) {
-    setData(d => ({ ...d, [key]: parseFloat(value) || 0 }));
-  }
+  useEffect(() => { loadAll(); }, []);
 
-  const savings = data.monthly_income - data.monthly_expenses;
-  const savingsRate = data.monthly_income > 0 ? (savings / data.monthly_income) * 100 : null;
+  const totalIncome = income.reduce((s, e) => s + Number(e.amount), 0);
+  const totalExpenses = expenses.reduce((s, e) => s + Number(e.amount), 0);
+  const savings = totalIncome - totalExpenses;
+  const savingsRate = totalIncome > 0 ? (savings / totalIncome) * 100 : null;
+  const fmt = (n: number) => n.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-white dark:bg-black">
@@ -82,64 +60,132 @@ export default function CashflowPage() {
               <div className="h-8 w-8 animate-spin rounded-full border-4 border-zinc-200 border-t-black dark:border-zinc-800 dark:border-t-white" />
             </div>
           ) : (
-            <form onSubmit={handleSave} className="flex flex-col gap-6">
+            <>
+              <Section
+                title="Income Sources"
+                table="income_sources"
+                types={INCOME_TYPES}
+                entries={income}
+                onChange={loadAll}
+                supabase={supabase}
+              />
+              <Section
+                title="Monthly Expenses"
+                table="monthly_expenses"
+                types={EXPENSE_TYPES}
+                entries={expenses}
+                onChange={loadAll}
+                supabase={supabase}
+              />
+
+              {/* Summary */}
               <div className="rounded-xl border-2 border-zinc-900 p-6 dark:border-zinc-700">
-                <h2 className="mb-4 text-sm font-semibold text-black dark:text-white">Monthly Cashflow</h2>
-                <div className="flex flex-col gap-3">
-                  <div className="flex items-center justify-between gap-4">
-                    <label className="text-sm text-zinc-600 dark:text-zinc-400">Monthly Income</label>
-                    <input
-                      type="number" min="0" step="any"
-                      value={data.monthly_income || ""}
-                      onChange={e => update("monthly_income", e.target.value)}
-                      placeholder="0"
-                      className="w-40 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-right text-sm text-black outline-none focus:border-black dark:border-zinc-800 dark:bg-black dark:text-white dark:focus:border-white"
-                    />
-                  </div>
-                  <div className="flex items-center justify-between gap-4">
-                    <label className="text-sm text-zinc-600 dark:text-zinc-400">Monthly Expenses</label>
-                    <input
-                      type="number" min="0" step="any"
-                      value={data.monthly_expenses || ""}
-                      onChange={e => update("monthly_expenses", e.target.value)}
-                      placeholder="0"
-                      className="w-40 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-right text-sm text-black outline-none focus:border-black dark:border-zinc-800 dark:bg-black dark:text-white dark:focus:border-white"
-                    />
-                  </div>
+                <div className="flex flex-col gap-2 text-sm">
+                  <Row label="Total Income"   value={fmt(totalIncome)} />
+                  <Row label="Total Expenses" value={fmt(totalExpenses)} />
+                  <div className="my-1 h-px bg-zinc-100 dark:bg-zinc-800" />
+                  <Row
+                    label="Monthly Savings"
+                    value={fmt(savings)}
+                    valueClass={savings >= 0 ? "text-green-600" : "text-red-500"}
+                  />
+                  <Row
+                    label="Savings Rate"
+                    value={savingsRate === null ? "—" : `${savingsRate.toFixed(1)}%`}
+                    valueClass={savingsRate === null ? "" : savingsRate >= 20 ? "text-green-600" : savingsRate >= 10 ? "text-yellow-500" : "text-red-500"}
+                  />
                 </div>
-
-                {data.monthly_income > 0 && (
-                  <div className="mt-6 flex flex-col gap-2 border-t border-zinc-100 pt-4 dark:border-zinc-800">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-zinc-600 dark:text-zinc-400">Monthly Savings</span>
-                      <span className={`font-medium ${savings >= 0 ? "text-green-600" : "text-red-500"}`}>
-                        {savings.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 })}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-zinc-600 dark:text-zinc-400">Savings Rate</span>
-                      <span className={`font-medium ${savingsRate === null ? "" : savingsRate >= 20 ? "text-green-600" : savingsRate >= 10 ? "text-yellow-500" : "text-red-500"}`}>
-                        {savingsRate === null ? "—" : `${savingsRate.toFixed(1)}%`}
-                      </span>
-                    </div>
-                  </div>
-                )}
               </div>
-
-              {error && <p className="text-sm text-red-500">{error}</p>}
-              <div className="flex items-center gap-3">
-                <button
-                  type="submit" disabled={saving}
-                  className="h-10 flex-1 rounded-full bg-black text-sm font-medium text-white transition-colors hover:bg-zinc-800 disabled:opacity-50 dark:bg-white dark:text-black dark:hover:bg-zinc-200"
-                >
-                  {saving ? "Saving..." : "Save"}
-                </button>
-                {saved && <span className="text-sm text-green-600">✓ Saved</span>}
-              </div>
-            </form>
+            </>
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+function Row({ label, value, valueClass = "" }: { label: string; value: string; valueClass?: string }) {
+  return (
+    <div className="flex items-center justify-between">
+      <span className="text-zinc-600 dark:text-zinc-400">{label}</span>
+      <span className={`font-medium text-black dark:text-white ${valueClass}`}>{value}</span>
+    </div>
+  );
+}
+
+type SupabaseClient = ReturnType<typeof createClient>;
+
+function Section({
+  title, table, types, entries, onChange, supabase,
+}: {
+  title: string;
+  table: string;
+  types: string[];
+  entries: Entry[];
+  onChange: () => void;
+  supabase: SupabaseClient;
+}) {
+  const [type, setType] = useState(types[0]);
+  const [amount, setAmount] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  async function handleAdd(e: React.FormEvent) {
+    e.preventDefault();
+    setSubmitting(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { setSubmitting(false); return; }
+    await supabase.from(table).insert({ user_id: user.id, type, amount: parseFloat(amount) });
+    setAmount("");
+    setType(types[0]);
+    setSubmitting(false);
+    onChange();
+  }
+
+  async function handleDelete(id: string) {
+    await supabase.from(table).delete().eq("id", id);
+    onChange();
+  }
+
+  return (
+    <div className="rounded-xl border-2 border-zinc-900 p-6 dark:border-zinc-700">
+      <h2 className="mb-4 text-sm font-semibold text-black dark:text-white">{title}</h2>
+
+      {entries.length > 0 && (
+        <div className="mb-4 flex flex-col gap-2">
+          {entries.map((e) => (
+            <div key={e.id} className="flex items-center justify-between gap-3 text-sm">
+              <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">{e.type}</span>
+              <span className="ml-auto font-medium text-black dark:text-white">
+                {Number(e.amount).toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 })}
+              </span>
+              <button onClick={() => handleDelete(e.id)} className="text-zinc-400 transition-colors hover:text-red-500">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 256 256" fill="currentColor">
+                  <path d="M216,48H176V40a24,24,0,0,0-24-24H104A24,24,0,0,0,80,40v8H40a8,8,0,0,0,0,16h8V208a16,16,0,0,0,16,16H192a16,16,0,0,0,16-16V64h8a8,8,0,0,0,0-16ZM96,40a8,8,0,0,1,8-8h48a8,8,0,0,1,8,8v8H96Zm96,168H64V64H192ZM112,104v64a8,8,0,0,1-16,0V104a8,8,0,0,1,16,0Zm48,0v64a8,8,0,0,1-16,0V104a8,8,0,0,1,16,0Z"/>
+                </svg>
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <form onSubmit={handleAdd} className="flex gap-2">
+        <select
+          value={type} onChange={(e) => setType(e.target.value)}
+          className="flex-1 rounded-lg border border-zinc-200 bg-white px-2 py-2 text-sm text-black outline-none focus:border-black dark:border-zinc-800 dark:bg-black dark:text-white dark:focus:border-white"
+        >
+          {types.map(t => <option key={t}>{t}</option>)}
+        </select>
+        <input
+          type="number" min="0" step="any" required
+          value={amount} onChange={(e) => setAmount(e.target.value)}
+          placeholder="0"
+          className="w-32 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-right text-sm text-black outline-none focus:border-black dark:border-zinc-800 dark:bg-black dark:text-white dark:focus:border-white"
+        />
+        <button
+          type="submit" disabled={submitting}
+          className="h-10 w-10 shrink-0 rounded-full bg-black text-white transition-colors hover:bg-zinc-800 disabled:opacity-50 dark:bg-white dark:text-black dark:hover:bg-zinc-200"
+        >+</button>
+      </form>
     </div>
   );
 }
