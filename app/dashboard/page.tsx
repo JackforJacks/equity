@@ -143,8 +143,12 @@ export default function Dashboard() {
     { label: "Other",       value: otherAsset, color: "#6B7280" },
   ].filter(a => a.value > 0) : [{ label: "Empty", value: 1, color: "#e4e4e7" }];
 
-  const wealthLiabs = liabilitiesV > 0
-    ? [{ label: "Liabilities", value: liabilitiesV, color: "#EF4444" }]
+  // Liabilities ring: red segment proportional to liabilities/totalAssets, rest empty
+  const wealthLiabs = (liabilitiesV > 0 && totalAssets > 0)
+    ? [
+        { label: "Liabilities", value: Math.min(liabilitiesV, totalAssets), color: "#EF4444" },
+        { label: "Empty", value: Math.max(0, totalAssets - liabilitiesV), color: "transparent" },
+      ]
     : [{ label: "Empty", value: 1, color: "#e4e4e7" }];
 
   // Cashflow computations
@@ -265,9 +269,15 @@ export default function Dashboard() {
                    outerRadius={wealthRadii.inner1} innerRadius={wealthRadii.inner2}
                    paddingAngle={0}
                    fill="#e4e4e7"
-                   stroke="#18181b" strokeWidth={1}
                  >
-                   {wealthLiabs.map(l => <Cell key={l.label} fill={l.color} />)}
+                   {wealthLiabs.map(l => (
+                     <Cell
+                       key={l.label}
+                       fill={l.color}
+                       stroke={l.label === "Empty" ? "none" : "#18181b"}
+                       strokeWidth={l.label === "Empty" ? 0 : 1}
+                     />
+                   ))}
                  </Pie>
                  <Tooltip
                    animationDuration={0}
