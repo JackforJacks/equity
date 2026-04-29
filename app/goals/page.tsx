@@ -52,7 +52,7 @@ export default function Goals() {
       name: name.trim(),
       type: "Other",
       target_amount: parseFloat(targetAmount),
-      target_date: targetDate ? `${targetDate}-01` : null,
+      target_date: targetDate ? endOfMonth(targetDate) : null,
     });
     setSubmitting(false);
     if (err) { setError(err.message); return; }
@@ -76,10 +76,16 @@ export default function Goals() {
     await supabase.from("goals").update({
       name: editGoal.name,
       target_amount: editGoal.target_amount,
-      target_date: editGoal.target_date ? `${editGoal.target_date}-01` : null,
+      target_date: editGoal.target_date ? endOfMonth(editGoal.target_date) : null,
     }).eq("id", id);
     setEditingId(null);
     fetchGoals();
+  }
+
+  function endOfMonth(ym: string) {
+    const [y, m] = ym.split("-").map(Number);
+    const last = new Date(y, m, 0).getDate();
+    return `${ym}-${String(last).padStart(2, "0")}`;
   }
 
   const fmt = (n: number) => n.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });

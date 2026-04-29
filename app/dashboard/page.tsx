@@ -212,14 +212,12 @@ export default function Dashboard() {
   const fmt = (n: number) => n.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 
   // Goal projection helpers
-  function monthsBetween(from: Date, to: Date) {
-    return (to.getFullYear() - from.getFullYear()) * 12 + (to.getMonth() - from.getMonth());
-  }
-
   function projectGoal(target: number, targetDateStr: string | null) {
     if (!targetDateStr) return null;
-    const monthsToTarget = monthsBetween(new Date(), new Date(targetDateStr));
-    if (monthsToTarget <= 0) return null;
+    const msPerDay = 24 * 60 * 60 * 1000;
+    const days = (new Date(targetDateStr).getTime() - Date.now()) / msPerDay;
+    const monthsToTarget = Math.max(0.1, days / 30.44); // fractional months, min 0.1 to avoid div-by-zero
+    if (days < 0) return { monthsToTarget: 0, requiredMonthly: 0, monthsAtCurrentRate: null, monthsDelta: null, overdue: true };
     const annualRate = (expectedRealReturn ?? 0) / 100;
     const r = annualRate / 12; // monthly rate
     const wealth = netWorth;
@@ -240,7 +238,7 @@ export default function Dashboard() {
     }
     const monthsAtCurrentRate = mNow >= cap ? null : mNow;
     const monthsDelta = monthsAtCurrentRate !== null ? monthsToTarget - monthsAtCurrentRate : null;
-    return { monthsToTarget, requiredMonthly, monthsAtCurrentRate, monthsDelta };
+    return { monthsToTarget, requiredMonthly, monthsAtCurrentRate, monthsDelta, overdue: false };
   }
 
   function fmtDelta(monthsDelta: number) {
@@ -673,7 +671,10 @@ export default function Dashboard() {
                      {g.target_date && (
                        <p className="mt-0.5 text-[10px] text-zinc-400">by {g.target_date.slice(0, 7)}</p>
                      )}
-                     {proj && (
+                     {proj && proj.overdue && (
+                       <p className="mt-2 text-[10px] text-red-500">Target date passed</p>
+                     )}
+                     {proj && !proj.overdue && (
                        <div className="mt-2 flex flex-col gap-0.5 text-[10px]">
                          <div className="flex items-center justify-between">
                            <span className="text-zinc-500">Need / month</span>
