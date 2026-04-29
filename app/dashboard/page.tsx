@@ -31,6 +31,8 @@ export default function Dashboard() {
   const menuRef = useRef<HTMLDivElement>(null);
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const [radii, setRadii] = useState({ height: 200, outer: 180, inner1: 151, inner2: 124 });
+  const wealthChartRef = useRef<HTMLDivElement>(null);
+  const [wealthRadii, setWealthRadii] = useState({ height: 200, outer: 180, inner1: 151, inner2: 124 });
 
   useEffect(() => {
     const measure = () => {
@@ -44,6 +46,21 @@ export default function Dashboard() {
     measure();
     const ro = new ResizeObserver(measure);
     if (chartContainerRef.current) ro.observe(chartContainerRef.current);
+    return () => ro.disconnect();
+  }, []);
+
+  useEffect(() => {
+    const measure = () => {
+      if (!wealthChartRef.current) return;
+      const w = wealthChartRef.current.offsetWidth;
+      const outer = Math.floor(w / 2) - 2;
+      const inner1 = Math.round(outer * 0.84);
+      const inner2 = Math.round(inner1 * 0.82);
+      setWealthRadii({ height: outer + 4, outer, inner1, inner2 });
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    if (wealthChartRef.current) ro.observe(wealthChartRef.current);
     return () => ro.disconnect();
   }, []);
 
@@ -157,28 +174,64 @@ export default function Dashboard() {
       <main className="flex flex-1 flex-row gap-4 overflow-hidden px-8 py-6">
        {/* LEFT COLUMN — Financial Position */}
        <div className="flex flex-1 min-h-0 flex-col gap-2">
-         {/* Net worth + wealth breakdown */}
+         {/* Net worth half donut — assets outer, liabilities inner */}
          <div className="flex flex-col items-center rounded-xl border-2 border-zinc-900 p-5 dark:border-zinc-700">
-           <span className="text-[10px] font-medium uppercase tracking-wider text-zinc-400">Net Worth</span>
-           <p className="mt-1 text-3xl font-semibold text-black dark:text-white">—</p>
-           <p className="text-[10px] text-zinc-400">vs last month</p>
+           <div className="relative w-full" ref={wealthChartRef}>
+             <ResponsiveContainer width="100%" height={wealthRadii.height}>
+               <PieChart>
+                 {/* Outer ring — asset types */}
+                 <Pie
+                   data={[
+                     { label: "Liquid Cash",  value: 25, color: "#10B981" },
+                     { label: "Investments", value: 25, color: "#1D4ED8" },
+                     { label: "Real Estate", value: 25, color: "#F59E0B" },
+                     { label: "Pension",     value: 25, color: "#8B5CF6" },
+                   ]}
+                   dataKey="value" nameKey="label"
+                   startAngle={180} endAngle={0}
+                   cx="50%" cy="100%"
+                   outerRadius={wealthRadii.outer} innerRadius={wealthRadii.inner1}
+                   paddingAngle={0}
+                   fill="#e4e4e7"
+                   stroke="#18181b" strokeWidth={1}
+                 >
+                   <Cell fill="#e4e4e7" />
+                   <Cell fill="#e4e4e7" />
+                   <Cell fill="#e4e4e7" />
+                   <Cell fill="#e4e4e7" />
+                 </Pie>
+                 {/* Inner ring — liabilities (red) */}
+                 <Pie
+                   data={[{ label: "Liabilities", value: 100, color: "#EF4444" }]}
+                   dataKey="value" nameKey="label"
+                   startAngle={180} endAngle={0}
+                   cx="50%" cy="100%"
+                   outerRadius={wealthRadii.inner1} innerRadius={wealthRadii.inner2}
+                   paddingAngle={0}
+                   fill="#e4e4e7"
+                   stroke="#18181b" strokeWidth={1}
+                 >
+                   <Cell fill="#e4e4e7" />
+                 </Pie>
+                 <Tooltip
+                   animationDuration={0}
+                   content={({ active, payload }) => {
+                     if (!active || !payload?.length) return null;
+                     return (
+                       <div style={{ borderRadius: "8px", border: "1px solid #e4e4e7", background: "#fff", padding: "6px 12px", fontSize: "13px" }}>
+                         {payload[0].name}: —
+                       </div>
+                     );
+                   }}
+                 />
+               </PieChart>
+             </ResponsiveContainer>
 
-           <div className="mt-4 flex w-full flex-col gap-2">
-             {[
-               { label: "Liquid Cash",  color: "#10B981" },
-               { label: "Investments", color: "#1D4ED8" },
-               { label: "Real Estate", color: "#F59E0B" },
-               { label: "Pension",     color: "#8B5CF6" },
-               { label: "Liabilities", color: "#EF4444" },
-             ].map(item => (
-               <div key={item.label} className="flex items-center justify-between text-xs">
-                 <div className="flex items-center gap-2">
-                   <span className="h-2 w-2 rounded-full" style={{ backgroundColor: item.color }} />
-                   <span className="text-zinc-600 dark:text-zinc-400">{item.label}</span>
-                 </div>
-                 <span className="font-medium text-black dark:text-white">—</span>
-               </div>
-             ))}
+             <div className="absolute bottom-0 left-1/2 -translate-x-1/2 text-center whitespace-nowrap">
+               <p style={{ fontSize: wealthRadii.outer * 0.16, fontWeight: 600 }} className="text-black dark:text-white leading-tight">—</p>
+               <p style={{ fontSize: wealthRadii.outer * 0.12, fontWeight: 700 }} className="leading-tight text-zinc-400">—%</p>
+               <p style={{ fontSize: wealthRadii.outer * 0.055 }} className="text-zinc-400">in the last 12 months</p>
+             </div>
            </div>
          </div>
 
