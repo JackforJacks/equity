@@ -175,7 +175,15 @@ export default function Dashboard() {
        {/* LEFT COLUMN — Financial Position */}
        <div className="flex flex-1 min-h-0 flex-col gap-2">
          {/* Net worth half donut — assets outer, liabilities inner */}
-         <div className="flex flex-col items-center rounded-xl border-2 border-zinc-900 p-5 dark:border-zinc-700">
+         <div className="relative flex flex-col items-center rounded-xl border-2 border-zinc-900 p-5 dark:border-zinc-700">
+           <button
+             onClick={() => router.push("/networth")}
+             className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-black dark:hover:bg-zinc-800 dark:hover:text-white"
+           >
+             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 256 256" fill="currentColor">
+               <path d="M227.31,73.37,182.63,28.68a16,16,0,0,0-22.63,0L36.69,152A15.86,15.86,0,0,0,32,163.31V208a16,16,0,0,0,16,16H92.69A15.86,15.86,0,0,0,104,219.31L227.31,96a16,16,0,0,0,0-22.63ZM92.69,208H48V163.31l88-88L180.69,120ZM192,108.68,147.31,64l24-24L216,84.68Z"/>
+             </svg>
+           </button>
            <div className="relative w-full" ref={wealthChartRef}>
              <ResponsiveContainer width="100%" height={wealthRadii.height}>
                <PieChart>
@@ -301,7 +309,15 @@ export default function Dashboard() {
 
        {/* CENTER COLUMN — Portfolio Stats */}
        <div className="flex flex-1 min-h-0 flex-col gap-2">
-        <div className="flex flex-col items-center rounded-xl border-2 border-zinc-900 p-5 dark:border-zinc-700">
+        <div className="relative flex flex-col items-center rounded-xl border-2 border-zinc-900 p-5 dark:border-zinc-700">
+          <button
+            onClick={() => router.push("/holdings")}
+            className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-black dark:hover:bg-zinc-800 dark:hover:text-white"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 256 256" fill="currentColor">
+              <path d="M227.31,73.37,182.63,28.68a16,16,0,0,0-22.63,0L36.69,152A15.86,15.86,0,0,0,32,163.31V208a16,16,0,0,0,16,16H92.69A15.86,15.86,0,0,0,104,219.31L227.31,96a16,16,0,0,0,0-22.63ZM92.69,208H48V163.31l88-88L180.69,120ZM192,108.68,147.31,64l24-24L216,84.68Z"/>
+            </svg>
+          </button>
         <div className="relative w-full" ref={chartContainerRef}>
           <ResponsiveContainer width="100%" height={radii.height}>
             <PieChart>
@@ -452,13 +468,7 @@ export default function Dashboard() {
        </div>
       </main>
 
-      <button onClick={() => router.push("/holdings")} className="fixed bottom-6 left-6 flex h-14 w-14 items-center justify-center rounded-full border-2 border-black text-black transition-colors hover:bg-zinc-100 dark:border-white dark:text-white dark:hover:bg-zinc-900">
-        <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 256 256" fill="currentColor">
-          <path d="M227.31,73.37,182.63,28.68a16,16,0,0,0-22.63,0L36.69,152A15.86,15.86,0,0,0,32,163.31V208a16,16,0,0,0,16,16H92.69A15.86,15.86,0,0,0,104,219.31L227.31,96a16,16,0,0,0,0-22.63ZM92.69,208H48V163.31l88-88L180.69,120ZM192,108.68,147.31,64l24-24L216,84.68Z"/>
-        </svg>
-      </button>
-
-      <button className="fixed bottom-6 right-6 flex h-14 w-14 items-center justify-center rounded-full bg-black text-white shadow-lg transition-colors hover:bg-zinc-800 dark:bg-white dark:text-black dark:hover:bg-zinc-200">
+<button className="fixed bottom-6 right-6 flex h-14 w-14 items-center justify-center rounded-full bg-black text-white shadow-lg transition-colors hover:bg-zinc-800 dark:bg-white dark:text-black dark:hover:bg-zinc-200">
         <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 256 256" fill="currentColor">
           <path d="M200,48H136V16a8,8,0,0,0-16,0V48H56A32,32,0,0,0,24,80V192a32,32,0,0,0,32,32H200a32,32,0,0,0,32-32V80A32,32,0,0,0,200,48ZM96,144a16,16,0,1,1,16-16A16,16,0,0,1,96,144Zm64,0a16,16,0,1,1,16-16A16,16,0,0,1,160,144Zm-96,48a8,8,0,0,1,0-16h96a8,8,0,0,1,0,16ZM72,80h16a8,8,0,0,1,0,16H72a8,8,0,0,1,0-16Zm96,0h16a8,8,0,0,1,0,16H168a8,8,0,0,1,0-16Z"/>
         </svg>
