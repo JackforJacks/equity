@@ -299,6 +299,14 @@ export default function Dashboard() {
                <p style={{ fontSize: wealthRadii.outer * 0.055 }} className="text-zinc-400">in the last 12 months</p>
              </div>
            </div>
+
+           {/* Bottom section: monthly saving rate */}
+           <div className="mt-4 flex w-full items-center justify-center gap-2 border-t border-zinc-100 pt-3 text-sm dark:border-zinc-800">
+             <span className={`font-semibold ${savingsRate === null ? "text-black dark:text-white" : savingsRate >= 20 ? "text-green-600" : savingsRate >= 10 ? "text-yellow-500" : "text-red-500"}`}>
+               {savingsRate === null ? "—%" : `${savingsRate.toFixed(0)}%`}
+             </span>
+             <span className="text-zinc-500">monthly saving rate</span>
+           </div>
          </div>
 
          {/* Wrapper for cashflow + 2x2 health grid (matches center metric grid height) */}
@@ -307,12 +315,7 @@ export default function Dashboard() {
          {/* Cashflow graph card */}
          <div className="flex flex-1 min-h-0 flex-col justify-between rounded-xl border-2 border-zinc-900 p-5 dark:border-zinc-700">
            <p className="flex items-center gap-3 text-3xl font-semibold text-black dark:text-white">
-             <span>
-               <span className={savingsRate === null ? "" : savingsRate >= 20 ? "text-green-600" : savingsRate >= 10 ? "text-yellow-500" : "text-red-500"}>
-                 {savingsRate === null ? "—%" : `${savingsRate.toFixed(0)}%`}
-               </span>
-               {" saving rate"}
-             </span>
+             Monthly Cashflow
              <button
                onClick={() => router.push("/cashflow")}
                className="ml-auto flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-black dark:hover:bg-zinc-800 dark:hover:text-white"
