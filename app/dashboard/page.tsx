@@ -302,7 +302,7 @@ export default function Dashboard() {
          </div>
 
          {/* Cashflow graph card */}
-         <div className="flex flex-col rounded-xl border-2 border-zinc-900 p-5 dark:border-zinc-700">
+         <div className="flex flex-1 min-h-0 flex-col justify-between rounded-xl border-2 border-zinc-900 p-5 dark:border-zinc-700">
            <p className="flex items-center gap-3 text-3xl font-semibold text-black dark:text-white">
              <span>
                <span className={savingsRate === null ? "" : savingsRate >= 20 ? "text-green-600" : savingsRate >= 10 ? "text-yellow-500" : "text-red-500"}>
