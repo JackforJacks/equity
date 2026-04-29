@@ -680,8 +680,14 @@ export default function Dashboard() {
                        const ym = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
                        const md = proj.monthsDelta;
                        const abs = Math.abs(Math.round(md));
+                       const years = Math.floor(abs / 12);
+                       const remMonths = abs % 12;
+                       const parts: string[] = [];
+                       if (years > 0) parts.push(`${years} ${years === 1 ? "year" : "years"}`);
+                       if (remMonths > 0) parts.push(`${remMonths} ${remMonths === 1 ? "month" : "months"}`);
+                       const duration = parts.length > 0 ? parts.join(" ") : "0 months";
                        const dir = md > 0 ? "earlier" : md < 0 ? "later" : "on time";
-                       const text = md === 0 ? `achievable on time, precisely ${ym}` : `achievable ${abs} ${abs === 1 ? "month" : "months"} ${dir}, precisely ${ym}`;
+                       const text = md === 0 ? `achievable on time, precisely ${ym}` : `achievable ${duration} ${dir}, precisely ${ym}`;
                        return (
                          <p className={`mt-2 text-[10px] font-medium ${md >= 0 ? "text-green-600" : "text-red-500"}`}>
                            {text}
