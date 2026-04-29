@@ -64,6 +64,7 @@ export default function Dashboard() {
   } | null>(null);
   const [incomeEntries, setIncomeEntries] = useState<{ type: string; amount: number }[]>([]);
   const [expenseEntries, setExpenseEntries] = useState<{ type: string; amount: number }[]>([]);
+  const [goals, setGoals] = useState<{ id: string; name: string; target_amount: number; target_date: string | null }[]>([]);
 
   useEffect(() => {
     const measure = () => {
@@ -85,11 +86,13 @@ export default function Dashboard() {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      const [profileRes, incomeRes, expenseRes] = await Promise.all([
+      const [profileRes, incomeRes, expenseRes, goalsRes] = await Promise.all([
         supabase.from("financial_profile").select("liquid_cash, real_estate, pension, other_assets, liabilities").eq("user_id", user.id).maybeSingle(),
         supabase.from("income_sources").select("type, amount").eq("user_id", user.id),
         supabase.from("monthly_expenses").select("type, amount").eq("user_id", user.id),
+        supabase.from("goals").select("id, name, target_amount, target_date").eq("user_id", user.id).order("target_date", { ascending: true }),
       ]);
+      setGoals(goalsRes.data ?? []);
       const incomeRows = (incomeRes.data ?? []) as { type: string; amount: number }[];
       const expenseRows = (expenseRes.data ?? []) as { type: string; amount: number }[];
       setIncomeEntries(incomeRows);
@@ -613,8 +616,24 @@ export default function Dashboard() {
                </svg>
              </button>
            </div>
-           <div className="flex flex-1 items-center justify-center">
-             <span className="text-zinc-300">—</span>
+           <div className="mt-3 flex flex-1 min-h-0 flex-col gap-2 overflow-y-auto">
+             {goals.length === 0 ? (
+               <div className="flex flex-1 items-center justify-center">
+                 <span className="text-sm text-zinc-400">No goals yet</span>
+               </div>
+             ) : (
+               goals.map((g) => (
+                 <div key={g.id} className="rounded-lg border border-zinc-200 p-3 dark:border-zinc-800">
+                   <div className="flex items-start justify-between gap-2">
+                     <span className="text-sm font-medium text-black dark:text-white">{g.name}</span>
+                     <span className="text-sm font-semibold text-black dark:text-white">{fmt(Number(g.target_amount))}</span>
+                   </div>
+                   {g.target_date && (
+                     <p className="mt-1 text-[10px] text-zinc-400">by {g.target_date.slice(0, 7)}</p>
+                   )}
+                 </div>
+               ))
+             )}
            </div>
          </div>
        </div>
