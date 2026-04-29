@@ -154,8 +154,17 @@ export default function Dashboard() {
         )}
       </div>
 
-      <main className="flex flex-1 flex-col overflow-hidden px-8 py-6">
-       <div className="mx-auto flex flex-1 min-h-0 w-1/3 flex-col gap-2">
+      <main className="flex flex-1 flex-row gap-4 overflow-hidden px-8 py-6">
+       {/* LEFT COLUMN — Financial Position */}
+       <div className="flex flex-1 min-h-0 flex-col gap-2">
+         <div className="flex flex-1 min-h-0 flex-col items-center justify-center rounded-xl border-2 border-zinc-900 p-5 dark:border-zinc-700">
+           <span className="text-xs font-medium uppercase tracking-wider text-zinc-400">Financial Position</span>
+           <span className="mt-3 text-zinc-300">—</span>
+         </div>
+       </div>
+
+       {/* CENTER COLUMN — Portfolio Stats */}
+       <div className="flex flex-1 min-h-0 flex-col gap-2">
         <div className="flex flex-col items-center rounded-xl border-2 border-zinc-900 p-5 dark:border-zinc-700">
         <div className="relative w-full" ref={chartContainerRef}>
           <ResponsiveContainer width="100%" height={radii.height}>
@@ -296,6 +305,14 @@ export default function Dashboard() {
             <span className="text-[10px] text-zinc-400">yearly return after inflation</span>
           </div>
         </div>
+       </div>
+
+       {/* RIGHT COLUMN — Goal Tracker */}
+       <div className="flex flex-1 min-h-0 flex-col gap-2">
+         <div className="flex flex-1 min-h-0 flex-col items-center justify-center rounded-xl border-2 border-zinc-900 p-5 dark:border-zinc-700">
+           <span className="text-xs font-medium uppercase tracking-wider text-zinc-400">Goal Tracker</span>
+           <span className="mt-3 text-zinc-300">—</span>
+         </div>
        </div>
       </main>
 
