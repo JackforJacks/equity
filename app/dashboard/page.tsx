@@ -218,9 +218,9 @@ export default function Dashboard() {
       <div className="fixed top-1 right-1 z-10" ref={menuRef}>
         <button
           onClick={() => setMenuOpen((v) => !v)}
-          className="flex h-9 w-9 items-center justify-center rounded-full border border-black bg-white text-black transition-colors hover:bg-zinc-100 dark:border-white dark:bg-black dark:text-white dark:hover:bg-zinc-900"
+          className="flex h-7 w-7 items-center justify-center rounded-full border border-black bg-white text-black transition-colors hover:bg-zinc-100 dark:border-white dark:bg-black dark:text-white dark:hover:bg-zinc-900"
         >
-          <span className="text-sm leading-none tracking-tighter">···</span>
+          <span className="text-xs leading-none tracking-tighter">···</span>
         </button>
         {menuOpen && (
           <div className="absolute right-0 mt-2 w-56 rounded-xl border border-zinc-200 bg-white py-2 shadow-md dark:border-zinc-800 dark:bg-zinc-950">
