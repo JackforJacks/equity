@@ -7,6 +7,30 @@ import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 
 type Segment = { label: string; value: number; color: string; grossValue?: number; quantity?: number };
 
+const INCOME_COLORS: Record<string, string> = {
+  Salary:    "#1D4ED8",
+  Freelance: "#7C3AED",
+  Business:  "#D97706",
+  Dividends: "#059669",
+  Rental:    "#EA580C",
+  Pension:   "#0891B2",
+  Other:     "#6B7280",
+};
+
+const EXPENSE_COLORS: Record<string, string> = {
+  Housing:        "#DC2626",
+  Food:           "#F97316",
+  Transportation: "#EAB308",
+  Utilities:      "#06B6D4",
+  Insurance:      "#6366F1",
+  Healthcare:     "#EC4899",
+  Subscriptions:  "#14B8A6",
+  Entertainment:  "#84CC16",
+  Education:      "#0EA5E9",
+  Personal:       "#F43F5E",
+  Other:          "#6B7280",
+};
+
 const EMPTY: Segment[] = [{ label: "Empty", value: 100, color: "#e4e4e7" }];
 
 export default function Dashboard() {
@@ -38,6 +62,8 @@ export default function Dashboard() {
     liquid_cash: number; real_estate: number; pension: number; other_assets: number;
     liabilities: number;
   } | null>(null);
+  const [incomeEntries, setIncomeEntries] = useState<{ type: string; amount: number }[]>([]);
+  const [expenseEntries, setExpenseEntries] = useState<{ type: string; amount: number }[]>([]);
 
   useEffect(() => {
     const measure = () => {
@@ -61,11 +87,15 @@ export default function Dashboard() {
       if (!user) return;
       const [profileRes, incomeRes, expenseRes] = await Promise.all([
         supabase.from("financial_profile").select("liquid_cash, real_estate, pension, other_assets, liabilities").eq("user_id", user.id).maybeSingle(),
-        supabase.from("income_sources").select("amount").eq("user_id", user.id),
-        supabase.from("monthly_expenses").select("amount").eq("user_id", user.id),
+        supabase.from("income_sources").select("type, amount").eq("user_id", user.id),
+        supabase.from("monthly_expenses").select("type, amount").eq("user_id", user.id),
       ]);
-      const monthly_income = (incomeRes.data ?? []).reduce((s: number, r: { amount: number }) => s + Number(r.amount), 0);
-      const monthly_expenses = (expenseRes.data ?? []).reduce((s: number, r: { amount: number }) => s + Number(r.amount), 0);
+      const incomeRows = (incomeRes.data ?? []) as { type: string; amount: number }[];
+      const expenseRows = (expenseRes.data ?? []) as { type: string; amount: number }[];
+      setIncomeEntries(incomeRows);
+      setExpenseEntries(expenseRows);
+      const monthly_income = incomeRows.reduce((s, r) => s + Number(r.amount), 0);
+      const monthly_expenses = expenseRows.reduce((s, r) => s + Number(r.amount), 0);
       setProfile({
         monthly_income, monthly_expenses,
         liquid_cash: profileRes.data?.liquid_cash ?? 0,
@@ -331,39 +361,49 @@ export default function Dashboard() {
            </div>
 
            <div className="mt-4 flex flex-col gap-2">
-             {/* Income bar (full width = total income) */}
+             {/* Income bar — colored segments per source */}
              <div className="flex h-6 w-full overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-900">
-               <div className="h-full bg-black dark:bg-white" style={{ width: income > 0 ? "100%" : "0%" }} />
+               {income > 0 && incomeEntries.map((e, i) => (
+                 <div
+                   key={i}
+                   className="h-full"
+                   style={{
+                     width: `${(Number(e.amount) / income) * 100}%`,
+                     backgroundColor: INCOME_COLORS[e.type] ?? INCOME_COLORS.Other,
+                   }}
+                   title={`${e.type}: ${fmt(Number(e.amount))}`}
+                 />
+               ))}
              </div>
-             {/* Expenses + Savings bar */}
+             {/* Expenses (per category) + Savings bar */}
              <div className="flex h-6 w-full overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-900">
-               <div className="h-full bg-zinc-300 dark:bg-zinc-700" style={{ width: `${expensesPct}%` }} />
-               <div className="h-full bg-green-500" style={{ width: `${savingsPct}%` }} />
+               {income > 0 && expenseEntries.map((e, i) => (
+                 <div
+                   key={i}
+                   className="h-full"
+                   style={{
+                     width: `${(Number(e.amount) / income) * 100}%`,
+                     backgroundColor: EXPENSE_COLORS[e.type] ?? EXPENSE_COLORS.Other,
+                   }}
+                   title={`${e.type}: ${fmt(Number(e.amount))}`}
+                 />
+               ))}
+               {savings > 0 && (
+                 <div
+                   className="h-full bg-green-500"
+                   style={{ width: `${savingsPct}%` }}
+                   title={`Savings: ${fmt(savings)}`}
+                 />
+               )}
              </div>
            </div>
 
-           <div className="mt-3 flex flex-col gap-1.5 text-xs">
-             <div className="flex items-center justify-between">
-               <div className="flex items-center gap-2">
-                 <span className="h-2 w-2 rounded-full bg-black dark:bg-white" />
-                 <span className="text-zinc-600 dark:text-zinc-400">Income</span>
-               </div>
-               <span className="font-medium text-black dark:text-white">{income > 0 ? fmt(income) : "—"}</span>
-             </div>
-             <div className="flex items-center justify-between">
-               <div className="flex items-center gap-2">
-                 <span className="h-2 w-2 rounded-full bg-zinc-400" />
-                 <span className="text-zinc-600 dark:text-zinc-400">Expenses</span>
-               </div>
-               <span className="font-medium text-black dark:text-white">{expenses > 0 ? fmt(expenses) : "—"}</span>
-             </div>
-             <div className="flex items-center justify-between">
-               <div className="flex items-center gap-2">
-                 <span className="h-2 w-2 rounded-full bg-green-500" />
-                 <span className="text-zinc-600 dark:text-zinc-400">Savings</span>
-               </div>
-               <span className="font-medium text-black dark:text-white">{income > 0 ? fmt(savings) : "—"}</span>
-             </div>
+           <div className="mt-3 flex items-center justify-between text-xs">
+             <span className="text-zinc-500">Income {income > 0 ? fmt(income) : "—"}</span>
+             <span className="text-zinc-500">Expenses {expenses > 0 ? fmt(expenses) : "—"}</span>
+             <span className={`font-medium ${savings > 0 ? "text-green-600" : savings < 0 ? "text-red-500" : "text-zinc-500"}`}>
+               Savings {income > 0 ? fmt(savings) : "—"}
+             </span>
            </div>
          </div>
 
