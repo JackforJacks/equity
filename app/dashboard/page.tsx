@@ -311,13 +311,15 @@ export default function Dashboard() {
                <path d="M227.31,73.37,182.63,28.68a16,16,0,0,0-22.63,0L36.69,152A15.86,15.86,0,0,0,32,163.31V208a16,16,0,0,0,16,16H92.69A15.86,15.86,0,0,0,104,219.31L227.31,96a16,16,0,0,0,0-22.63ZM92.69,208H48V163.31l88-88L180.69,120ZM192,108.68,147.31,64l24-24L216,84.68Z"/>
              </svg>
            </button>
-           <div className="flex items-baseline justify-between">
-             <span className="text-[10px] font-medium uppercase tracking-wider text-zinc-400">Savings Rate</span>
-             <span className="text-[10px] text-zinc-400">{savings > 0 ? `${fmt(savings)} / month` : "— / month"}</span>
+           <div className="flex items-baseline gap-3">
+             <p className={`text-3xl font-semibold ${savingsRate === null ? "text-black dark:text-white" : savingsRate >= 20 ? "text-green-600" : savingsRate >= 10 ? "text-yellow-500" : "text-red-500"}`}>
+               {savingsRate === null ? "—%" : `${savingsRate.toFixed(0)}%`}
+             </p>
+             <div className="flex flex-col">
+               <span className="text-xs font-medium text-black dark:text-white">saving rate</span>
+               <span className="text-[10px] text-zinc-400">{savings > 0 ? `${fmt(savings)} / month` : "— / month"}</span>
+             </div>
            </div>
-           <p className={`mt-1 text-3xl font-semibold ${savingsRate === null ? "text-black dark:text-white" : savingsRate >= 20 ? "text-green-600" : savingsRate >= 10 ? "text-yellow-500" : "text-red-500"}`}>
-             {savingsRate === null ? "—%" : `${savingsRate.toFixed(0)}%`}
-           </p>
 
            <div className="mt-4 flex h-6 w-full overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-900">
              <div className="h-full bg-zinc-300 dark:bg-zinc-700" style={{ width: `${expensesPct}%` }} />
