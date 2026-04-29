@@ -301,6 +301,9 @@ export default function Dashboard() {
            </div>
          </div>
 
+         {/* Wrapper for cashflow + 2x2 health grid (matches center metric grid height) */}
+         <div className="flex flex-1 min-h-0 flex-col gap-2">
+
          {/* Cashflow graph card */}
          <div className="flex flex-1 min-h-0 flex-col justify-between rounded-xl border-2 border-zinc-900 p-5 dark:border-zinc-700">
            <p className="flex items-center gap-3 text-3xl font-semibold text-black dark:text-white">
@@ -385,6 +388,7 @@ export default function Dashboard() {
              <span className="text-xs font-medium text-black dark:text-white">Net Worth Δ</span>
              <span className="text-[10px] text-zinc-400">12-month change</span>
            </div>
+         </div>
          </div>
        </div>
 
