@@ -321,9 +321,16 @@ export default function Dashboard() {
              </button>
            </p>
 
-           <div className="mt-4 flex h-6 w-full overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-900">
-             <div className="h-full bg-zinc-300 dark:bg-zinc-700" style={{ width: `${expensesPct}%` }} />
-             <div className="h-full bg-green-500" style={{ width: `${savingsPct}%` }} />
+           <div className="mt-4 flex flex-col gap-2">
+             {/* Income bar (full width = total income) */}
+             <div className="flex h-6 w-full overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-900">
+               <div className="h-full bg-black dark:bg-white" style={{ width: income > 0 ? "100%" : "0%" }} />
+             </div>
+             {/* Expenses + Savings bar */}
+             <div className="flex h-6 w-full overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-900">
+               <div className="h-full bg-zinc-300 dark:bg-zinc-700" style={{ width: `${expensesPct}%` }} />
+               <div className="h-full bg-green-500" style={{ width: `${savingsPct}%` }} />
+             </div>
            </div>
 
            <div className="mt-3 flex flex-col gap-1.5 text-xs">
