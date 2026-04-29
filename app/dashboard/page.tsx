@@ -674,24 +674,22 @@ export default function Dashboard() {
                      {proj && proj.overdue && (
                        <p className="mt-2 text-[10px] text-red-500">Target date passed</p>
                      )}
-                     {proj && !proj.overdue && (
-                       <div className="mt-2 flex flex-col gap-0.5 text-[10px]">
-                         <div className="flex items-center justify-between">
-                           <span className="text-zinc-500">Need / month</span>
-                           <span className="font-medium text-black dark:text-white">{fmt(proj.requiredMonthly)}</span>
-                         </div>
-                         {proj.monthsDelta !== null && (
-                           <div className="flex items-center justify-between">
-                             <span className="text-zinc-500">At current pace</span>
-                             <span className={`font-medium ${proj.monthsDelta >= 0 ? "text-green-600" : "text-red-500"}`}>
-                               {fmtDelta(proj.monthsDelta)}
-                             </span>
-                           </div>
-                         )}
-                         {proj.monthsAtCurrentRate === null && (
-                           <p className="text-red-500">Not reachable at current pace</p>
-                         )}
-                       </div>
+                     {proj && !proj.overdue && proj.monthsAtCurrentRate !== null && proj.monthsDelta !== null && (() => {
+                       const d = new Date();
+                       d.setMonth(d.getMonth() + Math.round(proj.monthsAtCurrentRate));
+                       const ym = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+                       const md = proj.monthsDelta;
+                       const abs = Math.abs(Math.round(md));
+                       const dir = md > 0 ? "earlier" : md < 0 ? "later" : "on time";
+                       const text = md === 0 ? `achievable on time, precisely ${ym}` : `achievable ${abs} ${abs === 1 ? "month" : "months"} ${dir}, precisely ${ym}`;
+                       return (
+                         <p className={`mt-2 text-[10px] font-medium ${md >= 0 ? "text-green-600" : "text-red-500"}`}>
+                           {text}
+                         </p>
+                       );
+                     })()}
+                     {proj && !proj.overdue && proj.monthsAtCurrentRate === null && (
+                       <p className="mt-2 text-[10px] text-red-500">Not reachable at current pace</p>
                      )}
                    </div>
                  );
