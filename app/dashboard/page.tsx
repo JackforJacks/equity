@@ -157,9 +157,73 @@ export default function Dashboard() {
       <main className="flex flex-1 flex-row gap-4 overflow-hidden px-8 py-6">
        {/* LEFT COLUMN — Financial Position */}
        <div className="flex flex-1 min-h-0 flex-col gap-2">
-         <div className="flex flex-1 min-h-0 flex-col items-center justify-center rounded-xl border-2 border-zinc-900 p-5 dark:border-zinc-700">
-           <span className="text-xs font-medium uppercase tracking-wider text-zinc-400">Financial Position</span>
-           <span className="mt-3 text-zinc-300">—</span>
+         {/* Net worth + wealth breakdown */}
+         <div className="flex flex-col items-center rounded-xl border-2 border-zinc-900 p-5 dark:border-zinc-700">
+           <span className="text-[10px] font-medium uppercase tracking-wider text-zinc-400">Net Worth</span>
+           <p className="mt-1 text-3xl font-semibold text-black dark:text-white">—</p>
+           <p className="text-[10px] text-zinc-400">vs last month</p>
+
+           <div className="mt-4 flex w-full flex-col gap-2">
+             {[
+               { label: "Liquid Cash",  color: "#10B981" },
+               { label: "Investments", color: "#1D4ED8" },
+               { label: "Real Estate", color: "#F59E0B" },
+               { label: "Pension",     color: "#8B5CF6" },
+               { label: "Liabilities", color: "#EF4444" },
+             ].map(item => (
+               <div key={item.label} className="flex items-center justify-between text-xs">
+                 <div className="flex items-center gap-2">
+                   <span className="h-2 w-2 rounded-full" style={{ backgroundColor: item.color }} />
+                   <span className="text-zinc-600 dark:text-zinc-400">{item.label}</span>
+                 </div>
+                 <span className="font-medium text-black dark:text-white">—</span>
+               </div>
+             ))}
+           </div>
+         </div>
+
+         {/* 2x4 grid of cashflow + health cards */}
+         <div className="grid flex-1 min-h-0 grid-cols-2 [grid-template-rows:repeat(4,minmax(0,1fr))] gap-2">
+           <div className="flex flex-col items-center justify-center gap-0.5 rounded-xl border-2 border-zinc-900 py-2 dark:border-zinc-700">
+             <span className="text-2xl font-bold text-black dark:text-white">—</span>
+             <span className="text-xs font-medium text-black dark:text-white">Monthly Income</span>
+             <span className="text-[10px] text-zinc-400">gross / month</span>
+           </div>
+           <div className="flex flex-col items-center justify-center gap-0.5 rounded-xl border-2 border-zinc-900 py-2 dark:border-zinc-700">
+             <span className="text-2xl font-bold text-black dark:text-white">—</span>
+             <span className="text-xs font-medium text-black dark:text-white">Monthly Expenses</span>
+             <span className="text-[10px] text-zinc-400">fixed + variable</span>
+           </div>
+           <div className="flex flex-col items-center justify-center gap-0.5 rounded-xl border-2 border-zinc-900 py-2 dark:border-zinc-700">
+             <span className="text-2xl font-bold text-black dark:text-white">—</span>
+             <span className="text-xs font-medium text-black dark:text-white">Savings Rate</span>
+             <span className="text-[10px] text-zinc-400">% of income</span>
+           </div>
+           <div className="flex flex-col items-center justify-center gap-0.5 rounded-xl border-2 border-zinc-900 py-2 dark:border-zinc-700">
+             <span className="text-2xl font-bold text-black dark:text-white">—</span>
+             <span className="text-xs font-medium text-black dark:text-white">Monthly Savings</span>
+             <span className="text-[10px] text-zinc-400">income − expenses</span>
+           </div>
+           <div className="flex flex-col items-center justify-center gap-0.5 rounded-xl border-2 border-zinc-900 py-2 dark:border-zinc-700">
+             <span className="text-2xl font-bold text-black dark:text-white">—</span>
+             <span className="text-xs font-medium text-black dark:text-white">Emergency Fund</span>
+             <span className="text-[10px] text-zinc-400">months covered</span>
+           </div>
+           <div className="flex flex-col items-center justify-center gap-0.5 rounded-xl border-2 border-zinc-900 py-2 dark:border-zinc-700">
+             <span className="text-2xl font-bold text-black dark:text-white">—</span>
+             <span className="text-xs font-medium text-black dark:text-white">Debt-to-Income</span>
+             <span className="text-[10px] text-zinc-400">debt vs income</span>
+           </div>
+           <div className="flex flex-col items-center justify-center gap-0.5 rounded-xl border-2 border-zinc-900 py-2 dark:border-zinc-700">
+             <span className="text-2xl font-bold text-black dark:text-white">—</span>
+             <span className="text-xs font-medium text-black dark:text-white">Liquidity Ratio</span>
+             <span className="text-[10px] text-zinc-400">liquid / total</span>
+           </div>
+           <div className="flex flex-col items-center justify-center gap-0.5 rounded-xl border-2 border-zinc-900 py-2 dark:border-zinc-700">
+             <span className="text-2xl font-bold text-black dark:text-white">—</span>
+             <span className="text-xs font-medium text-black dark:text-white">Net Worth Δ</span>
+             <span className="text-[10px] text-zinc-400">12-month change</span>
+           </div>
          </div>
        </div>
 
