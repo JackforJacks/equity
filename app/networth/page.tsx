@@ -5,8 +5,6 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
 
 type Profile = {
-  monthly_income: number;
-  monthly_expenses: number;
   liquid_cash: number;
   real_estate: number;
   pension: number;
@@ -15,8 +13,6 @@ type Profile = {
 };
 
 const EMPTY_PROFILE: Profile = {
-  monthly_income: 0,
-  monthly_expenses: 0,
   liquid_cash: 0,
   real_estate: 0,
   pension: 0,
@@ -24,14 +20,12 @@ const EMPTY_PROFILE: Profile = {
   liabilities: 0,
 };
 
-const FIELDS: { key: keyof Profile; label: string; group: "cashflow" | "assets" | "liabilities" }[] = [
-  { key: "monthly_income",   label: "Monthly Income",    group: "cashflow" },
-  { key: "monthly_expenses", label: "Monthly Expenses",  group: "cashflow" },
-  { key: "liquid_cash",      label: "Liquid Cash",       group: "assets" },
-  { key: "real_estate",      label: "Real Estate",       group: "assets" },
-  { key: "pension",          label: "Pension",           group: "assets" },
-  { key: "other_assets",     label: "Other Assets",      group: "assets" },
-  { key: "liabilities",      label: "Liabilities",       group: "liabilities" },
+const FIELDS: { key: keyof Profile; label: string; group: "assets" | "liabilities" }[] = [
+  { key: "liquid_cash",  label: "Liquid Cash",   group: "assets" },
+  { key: "real_estate",  label: "Real Estate",   group: "assets" },
+  { key: "pension",      label: "Pension",       group: "assets" },
+  { key: "other_assets", label: "Other Assets",  group: "assets" },
+  { key: "liabilities",  label: "Liabilities",   group: "liabilities" },
 ];
 
 export default function Networth() {
@@ -50,7 +44,7 @@ export default function Networth() {
       if (!user) return;
       const { data } = await supabase
         .from("financial_profile")
-        .select("*")
+        .select("liquid_cash, real_estate, pension, other_assets, liabilities")
         .eq("user_id", user.id)
         .maybeSingle();
       if (data) setProfile({ ...EMPTY_PROFILE, ...data });
@@ -79,7 +73,6 @@ export default function Networth() {
     setProfile(p => ({ ...p, [key]: parseFloat(value) || 0 }));
   }
 
-  const cashflow = FIELDS.filter(f => f.group === "cashflow");
   const assets = FIELDS.filter(f => f.group === "assets");
   const liabilities = FIELDS.filter(f => f.group === "liabilities");
 
@@ -108,7 +101,6 @@ export default function Networth() {
             </div>
           ) : (
             <form onSubmit={handleSave} className="flex flex-col gap-6">
-              <Section title="Cashflow" fields={cashflow} profile={profile} update={update} />
               <Section title="Assets"   fields={assets}   profile={profile} update={update} />
               <Section title="Liabilities" fields={liabilities} profile={profile} update={update} />
 

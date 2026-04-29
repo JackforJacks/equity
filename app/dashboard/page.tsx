@@ -302,7 +302,15 @@ export default function Dashboard() {
          </div>
 
          {/* Cashflow graph card */}
-         <div className="flex flex-col rounded-xl border-2 border-zinc-900 p-5 dark:border-zinc-700">
+         <div className="relative flex flex-col rounded-xl border-2 border-zinc-900 p-5 dark:border-zinc-700">
+           <button
+             onClick={() => router.push("/cashflow")}
+             className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-black dark:hover:bg-zinc-800 dark:hover:text-white"
+           >
+             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 256 256" fill="currentColor">
+               <path d="M227.31,73.37,182.63,28.68a16,16,0,0,0-22.63,0L36.69,152A15.86,15.86,0,0,0,32,163.31V208a16,16,0,0,0,16,16H92.69A15.86,15.86,0,0,0,104,219.31L227.31,96a16,16,0,0,0,0-22.63ZM92.69,208H48V163.31l88-88L180.69,120ZM192,108.68,147.31,64l24-24L216,84.68Z"/>
+             </svg>
+           </button>
            <div className="flex items-baseline justify-between">
              <span className="text-[10px] font-medium uppercase tracking-wider text-zinc-400">Savings Rate</span>
              <span className="text-[10px] text-zinc-400">{savings > 0 ? `${fmt(savings)} / month` : "— / month"}</span>
