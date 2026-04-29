@@ -237,15 +237,18 @@ export default function Dashboard() {
        {/* LEFT COLUMN — Financial Position */}
        <div className="flex flex-1 min-h-0 flex-col gap-2">
          {/* Net worth half donut — assets outer, liabilities inner */}
-         <div className="relative flex flex-col items-center rounded-xl border-2 border-zinc-900 p-5 dark:border-zinc-700">
-           <button
-             onClick={() => router.push("/networth")}
-             className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-black dark:hover:bg-zinc-800 dark:hover:text-white"
-           >
-             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 256 256" fill="currentColor">
-               <path d="M227.31,73.37,182.63,28.68a16,16,0,0,0-22.63,0L36.69,152A15.86,15.86,0,0,0,32,163.31V208a16,16,0,0,0,16,16H92.69A15.86,15.86,0,0,0,104,219.31L227.31,96a16,16,0,0,0,0-22.63ZM92.69,208H48V163.31l88-88L180.69,120ZM192,108.68,147.31,64l24-24L216,84.68Z"/>
-             </svg>
-           </button>
+         <div className="flex flex-col items-center rounded-xl border-2 border-zinc-900 p-5 dark:border-zinc-700">
+           <div className="mb-3 flex w-full items-center justify-between">
+             <span className="text-sm font-medium text-black dark:text-white">Net Worth</span>
+             <button
+               onClick={() => router.push("/networth")}
+               className="flex h-8 w-8 items-center justify-center rounded-full text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-black dark:hover:bg-zinc-800 dark:hover:text-white"
+             >
+               <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 256 256" fill="currentColor">
+                 <path d="M227.31,73.37,182.63,28.68a16,16,0,0,0-22.63,0L36.69,152A15.86,15.86,0,0,0,32,163.31V208a16,16,0,0,0,16,16H92.69A15.86,15.86,0,0,0,104,219.31L227.31,96a16,16,0,0,0,0-22.63ZM92.69,208H48V163.31l88-88L180.69,120ZM192,108.68,147.31,64l24-24L216,84.68Z"/>
+               </svg>
+             </button>
+           </div>
            <div className="relative w-full" ref={wealthChartRef}>
              <ResponsiveContainer width="100%" height={wealthRadii.height}>
                <PieChart>
@@ -306,17 +309,17 @@ export default function Dashboard() {
 
          {/* Cashflow graph card — spans 2 rows */}
          <div className="row-span-2 flex min-h-0 flex-col justify-between rounded-xl border-2 border-zinc-900 p-5 dark:border-zinc-700">
-           <p className="flex items-center gap-3 text-3xl font-semibold text-black dark:text-white">
-             Monthly Cashflow
+           <div className="flex items-center justify-between">
+             <span className="text-sm font-medium text-black dark:text-white">Monthly Cashflow</span>
              <button
                onClick={() => router.push("/cashflow")}
-               className="ml-auto flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-black dark:hover:bg-zinc-800 dark:hover:text-white"
+               className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-black dark:hover:bg-zinc-800 dark:hover:text-white"
              >
                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 256 256" fill="currentColor">
                  <path d="M227.31,73.37,182.63,28.68a16,16,0,0,0-22.63,0L36.69,152A15.86,15.86,0,0,0,32,163.31V208a16,16,0,0,0,16,16H92.69A15.86,15.86,0,0,0,104,219.31L227.31,96a16,16,0,0,0,0-22.63ZM92.69,208H48V163.31l88-88L180.69,120ZM192,108.68,147.31,64l24-24L216,84.68Z"/>
                </svg>
              </button>
-           </p>
+           </div>
 
            <div className="mt-4 flex flex-col gap-2">
              {/* Income bar (full width = total income) */}
@@ -391,15 +394,18 @@ export default function Dashboard() {
 
        {/* CENTER COLUMN — Portfolio Stats */}
        <div className="flex flex-1 min-h-0 flex-col gap-2">
-        <div className="relative flex flex-col items-center rounded-xl border-2 border-zinc-900 p-5 dark:border-zinc-700">
-          <button
-            onClick={() => router.push("/holdings")}
-            className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-black dark:hover:bg-zinc-800 dark:hover:text-white"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 256 256" fill="currentColor">
-              <path d="M227.31,73.37,182.63,28.68a16,16,0,0,0-22.63,0L36.69,152A15.86,15.86,0,0,0,32,163.31V208a16,16,0,0,0,16,16H92.69A15.86,15.86,0,0,0,104,219.31L227.31,96a16,16,0,0,0,0-22.63ZM92.69,208H48V163.31l88-88L180.69,120ZM192,108.68,147.31,64l24-24L216,84.68Z"/>
-            </svg>
-          </button>
+        <div className="flex flex-col items-center rounded-xl border-2 border-zinc-900 p-5 dark:border-zinc-700">
+          <div className="mb-3 flex w-full items-center justify-between">
+            <span className="text-sm font-medium text-black dark:text-white">Portfolio Overview</span>
+            <button
+              onClick={() => router.push("/holdings")}
+              className="flex h-8 w-8 items-center justify-center rounded-full text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-black dark:hover:bg-zinc-800 dark:hover:text-white"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 256 256" fill="currentColor">
+                <path d="M227.31,73.37,182.63,28.68a16,16,0,0,0-22.63,0L36.69,152A15.86,15.86,0,0,0,32,163.31V208a16,16,0,0,0,16,16H92.69A15.86,15.86,0,0,0,104,219.31L227.31,96a16,16,0,0,0,0-22.63ZM92.69,208H48V163.31l88-88L180.69,120ZM192,108.68,147.31,64l24-24L216,84.68Z"/>
+              </svg>
+            </button>
+          </div>
         <div className="relative w-full" ref={chartContainerRef}>
           <ResponsiveContainer width="100%" height={radii.height}>
             <PieChart>
