@@ -7,9 +7,12 @@ import { createClient } from "@/lib/supabase";
 type Goal = {
   id: string;
   name: string;
+  type: string;
   target_amount: number;
   target_date: string | null;
 };
+
+const GOAL_TYPES = ["Net Worth", "Liquidity", "Portfolio"];
 
 export default function Goals() {
   const router = useRouter();
@@ -22,6 +25,7 @@ export default function Goals() {
   const [editGoal, setEditGoal] = useState<Partial<Goal>>({});
 
   const [name, setName] = useState("");
+  const [type, setType] = useState(GOAL_TYPES[0]);
   const [targetAmount, setTargetAmount] = useState("");
   const [targetDate, setTargetDate] = useState("");
 
@@ -32,7 +36,7 @@ export default function Goals() {
     if (!user) return;
     const { data } = await supabase
       .from("goals")
-      .select("id, name, target_amount, target_date")
+      .select("id, name, type, target_amount, target_date")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false });
     setGoals(data ?? []);
@@ -50,13 +54,13 @@ export default function Goals() {
     const { error: err } = await supabase.from("goals").insert({
       user_id: user.id,
       name: name.trim(),
-      type: "Other",
+      type,
       target_amount: parseFloat(targetAmount),
       target_date: targetDate ? endOfMonth(targetDate) : null,
     });
     setSubmitting(false);
     if (err) { setError(err.message); return; }
-    setName(""); setTargetAmount(""); setTargetDate("");
+    setName(""); setType(GOAL_TYPES[0]); setTargetAmount(""); setTargetDate("");
     fetchGoals();
   }
 
@@ -75,6 +79,7 @@ export default function Goals() {
   async function handleSaveEdit(id: string) {
     await supabase.from("goals").update({
       name: editGoal.name,
+      type: editGoal.type,
       target_amount: editGoal.target_amount,
       target_date: editGoal.target_date ? endOfMonth(editGoal.target_date) : null,
     }).eq("id", id);
@@ -122,11 +127,19 @@ export default function Goals() {
                   <div key={g.id} className="rounded-xl border-2 border-zinc-900 p-4 dark:border-zinc-700">
                     {isEditing ? (
                       <div className="flex flex-col gap-2">
-                        <input
-                          value={editGoal.name ?? ""} onChange={e => setEditGoal({ ...editGoal, name: e.target.value })}
-                          placeholder="Goal name"
-                          className="rounded-lg border border-zinc-300 px-2 py-1 text-sm outline-none focus:border-black dark:border-zinc-700 dark:bg-zinc-900 dark:text-white"
-                        />
+                        <div className="flex gap-2">
+                          <input
+                            value={editGoal.name ?? ""} onChange={e => setEditGoal({ ...editGoal, name: e.target.value })}
+                            placeholder="Goal name"
+                            className="flex-1 rounded-lg border border-zinc-300 px-2 py-1 text-sm outline-none focus:border-black dark:border-zinc-700 dark:bg-zinc-900 dark:text-white"
+                          />
+                          <select
+                            value={editGoal.type} onChange={e => setEditGoal({ ...editGoal, type: e.target.value })}
+                            className="rounded-lg border border-zinc-300 px-2 py-1 text-sm outline-none focus:border-black dark:border-zinc-700 dark:bg-zinc-900 dark:text-white"
+                          >
+                            {GOAL_TYPES.map(t => <option key={t}>{t}</option>)}
+                          </select>
+                        </div>
                         <div className="flex gap-2">
                           <input
                             type="number" placeholder="Target Amount"
@@ -151,7 +164,10 @@ export default function Goals() {
                     ) : (
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex flex-1 flex-col gap-0.5">
-                          <span className="text-sm font-semibold text-black dark:text-white">{g.name}</span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-semibold text-black dark:text-white">{g.name}</span>
+                            <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-[10px] font-medium text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">{g.type}</span>
+                          </div>
                           <span className="text-xs text-zinc-500">
                             {fmt(Number(g.target_amount))}
                             {g.target_date && ` · by ${g.target_date.slice(0, 7)}`}
@@ -177,14 +193,25 @@ export default function Goals() {
           <div className="rounded-xl border-2 border-zinc-900 p-6 dark:border-zinc-700">
             <h2 className="mb-4 text-sm font-semibold text-black dark:text-white">Add goal</h2>
             <form onSubmit={handleAdd} className="flex flex-col gap-4">
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs text-zinc-500">Name</label>
-                <input
-                  value={name} onChange={e => setName(e.target.value)}
-                  placeholder="House down payment"
-                  required
-                  className="h-10 rounded-lg border border-zinc-200 bg-white px-3 text-sm text-black outline-none focus:border-black dark:border-zinc-800 dark:bg-black dark:text-white dark:focus:border-white"
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs text-zinc-500">Name</label>
+                  <input
+                    value={name} onChange={e => setName(e.target.value)}
+                    placeholder="House down payment"
+                    required
+                    className="h-10 rounded-lg border border-zinc-200 bg-white px-3 text-sm text-black outline-none focus:border-black dark:border-zinc-800 dark:bg-black dark:text-white dark:focus:border-white"
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs text-zinc-500">Type</label>
+                  <select
+                    value={type} onChange={e => setType(e.target.value)}
+                    className="h-10 rounded-lg border border-zinc-200 bg-white px-3 text-sm text-black outline-none focus:border-black dark:border-zinc-800 dark:bg-black dark:text-white dark:focus:border-white"
+                  >
+                    {GOAL_TYPES.map(t => <option key={t}>{t}</option>)}
+                  </select>
+                </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1.5">

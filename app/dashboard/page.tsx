@@ -64,7 +64,7 @@ export default function Dashboard() {
   } | null>(null);
   const [incomeEntries, setIncomeEntries] = useState<{ type: string; amount: number }[]>([]);
   const [expenseEntries, setExpenseEntries] = useState<{ type: string; amount: number }[]>([]);
-  const [goals, setGoals] = useState<{ id: string; name: string; target_amount: number; target_date: string | null }[]>([]);
+  const [goals, setGoals] = useState<{ id: string; name: string; type: string; target_amount: number; target_date: string | null }[]>([]);
 
   useEffect(() => {
     const measure = () => {
@@ -90,7 +90,7 @@ export default function Dashboard() {
         supabase.from("financial_profile").select("liquid_cash, real_estate, pension, other_assets, liabilities").eq("user_id", user.id).maybeSingle(),
         supabase.from("income_sources").select("type, amount").eq("user_id", user.id),
         supabase.from("monthly_expenses").select("type, amount").eq("user_id", user.id),
-        supabase.from("goals").select("id, name, target_amount, target_date").eq("user_id", user.id).order("target_date", { ascending: true }),
+        supabase.from("goals").select("id, name, type, target_amount, target_date").eq("user_id", user.id).order("target_date", { ascending: true }),
       ]);
       setGoals(goalsRes.data ?? []);
       const incomeRows = (incomeRes.data ?? []) as { type: string; amount: number }[];
@@ -212,7 +212,7 @@ export default function Dashboard() {
   const fmt = (n: number) => n.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 
   // Goal projection helpers
-  function projectGoal(target: number, targetDateStr: string | null) {
+  function projectGoal(target: number, targetDateStr: string | null, goalType: string) {
     if (!targetDateStr) return null;
     const msPerDay = 24 * 60 * 60 * 1000;
     const days = (new Date(targetDateStr).getTime() - Date.now()) / msPerDay;
@@ -220,7 +220,10 @@ export default function Dashboard() {
     if (days < 0) return { monthsToTarget: 0, requiredMonthly: 0, monthsAtCurrentRate: null, monthsDelta: null, overdue: true };
     const annualRate = (expectedRealReturn ?? 0) / 100;
     const r = annualRate / 12; // monthly rate
-    const wealth = netWorth;
+    const wealth =
+      goalType === "Liquidity" ? liquidCash + investments :
+      goalType === "Portfolio" ? investments :
+      netWorth;
     // Required monthly contribution to hit target on time
     const fvOfWealth = wealth * Math.pow(1 + r, monthsToTarget);
     const remaining = target - fvOfWealth;
@@ -661,11 +664,14 @@ export default function Dashboard() {
                </div>
              ) : (
                goals.map((g) => {
-                 const proj = projectGoal(Number(g.target_amount), g.target_date);
+                 const proj = projectGoal(Number(g.target_amount), g.target_date, g.type);
                  return (
                    <div key={g.id} className="rounded-lg border border-zinc-200 p-3 dark:border-zinc-800">
                      <div className="flex items-start justify-between gap-2">
-                       <span className="text-sm font-medium text-black dark:text-white">{g.name}</span>
+                       <div className="flex flex-1 items-center gap-2">
+                         <span className="text-sm font-medium text-black dark:text-white">{g.name}</span>
+                         <span className="rounded-full bg-zinc-100 px-1.5 py-0.5 text-[9px] font-medium text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">{g.type}</span>
+                       </div>
                        <span className="text-sm font-semibold text-black dark:text-white">{fmt(Number(g.target_amount))}</span>
                      </div>
                      {g.target_date && (
