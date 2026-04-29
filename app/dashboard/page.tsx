@@ -182,28 +182,47 @@ export default function Dashboard() {
            </div>
          </div>
 
-         {/* 2x4 grid of cashflow + health cards */}
-         <div className="grid flex-1 min-h-0 grid-cols-2 [grid-template-rows:repeat(4,minmax(0,1fr))] gap-2">
-           <div className="flex flex-col items-center justify-center gap-0.5 rounded-xl border-2 border-zinc-900 py-2 dark:border-zinc-700">
-             <span className="text-2xl font-bold text-black dark:text-white">—</span>
-             <span className="text-xs font-medium text-black dark:text-white">Monthly Income</span>
-             <span className="text-[10px] text-zinc-400">gross / month</span>
+         {/* Cashflow graph card */}
+         <div className="flex flex-col rounded-xl border-2 border-zinc-900 p-5 dark:border-zinc-700">
+           <div className="flex items-baseline justify-between">
+             <span className="text-[10px] font-medium uppercase tracking-wider text-zinc-400">Savings Rate</span>
+             <span className="text-[10px] text-zinc-400">— / month</span>
            </div>
-           <div className="flex flex-col items-center justify-center gap-0.5 rounded-xl border-2 border-zinc-900 py-2 dark:border-zinc-700">
-             <span className="text-2xl font-bold text-black dark:text-white">—</span>
-             <span className="text-xs font-medium text-black dark:text-white">Monthly Expenses</span>
-             <span className="text-[10px] text-zinc-400">fixed + variable</span>
+           <p className="mt-1 text-3xl font-semibold text-black dark:text-white">—%</p>
+
+           {/* Stacked horizontal bar: expenses + savings = income */}
+           <div className="mt-4 flex h-6 w-full overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-900">
+             <div className="h-full bg-zinc-300 dark:bg-zinc-700" style={{ width: "0%" }} />
+             <div className="h-full bg-green-500" style={{ width: "0%" }} />
            </div>
-           <div className="flex flex-col items-center justify-center gap-0.5 rounded-xl border-2 border-zinc-900 py-2 dark:border-zinc-700">
-             <span className="text-2xl font-bold text-black dark:text-white">—</span>
-             <span className="text-xs font-medium text-black dark:text-white">Savings Rate</span>
-             <span className="text-[10px] text-zinc-400">% of income</span>
+
+           <div className="mt-3 flex flex-col gap-1.5 text-xs">
+             <div className="flex items-center justify-between">
+               <div className="flex items-center gap-2">
+                 <span className="h-2 w-2 rounded-full bg-black dark:bg-white" />
+                 <span className="text-zinc-600 dark:text-zinc-400">Income</span>
+               </div>
+               <span className="font-medium text-black dark:text-white">—</span>
+             </div>
+             <div className="flex items-center justify-between">
+               <div className="flex items-center gap-2">
+                 <span className="h-2 w-2 rounded-full bg-zinc-400" />
+                 <span className="text-zinc-600 dark:text-zinc-400">Expenses</span>
+               </div>
+               <span className="font-medium text-black dark:text-white">—</span>
+             </div>
+             <div className="flex items-center justify-between">
+               <div className="flex items-center gap-2">
+                 <span className="h-2 w-2 rounded-full bg-green-500" />
+                 <span className="text-zinc-600 dark:text-zinc-400">Savings</span>
+               </div>
+               <span className="font-medium text-black dark:text-white">—</span>
+             </div>
            </div>
-           <div className="flex flex-col items-center justify-center gap-0.5 rounded-xl border-2 border-zinc-900 py-2 dark:border-zinc-700">
-             <span className="text-2xl font-bold text-black dark:text-white">—</span>
-             <span className="text-xs font-medium text-black dark:text-white">Monthly Savings</span>
-             <span className="text-[10px] text-zinc-400">income − expenses</span>
-           </div>
+         </div>
+
+         {/* 2x2 grid of financial health cards */}
+         <div className="grid flex-1 min-h-0 grid-cols-2 [grid-template-rows:repeat(2,minmax(0,1fr))] gap-2">
            <div className="flex flex-col items-center justify-center gap-0.5 rounded-xl border-2 border-zinc-900 py-2 dark:border-zinc-700">
              <span className="text-2xl font-bold text-black dark:text-white">—</span>
              <span className="text-xs font-medium text-black dark:text-white">Emergency Fund</span>
