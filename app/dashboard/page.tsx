@@ -33,6 +33,11 @@ export default function Dashboard() {
   const [radii, setRadii] = useState({ height: 200, outer: 180, inner1: 151, inner2: 124 });
   const wealthChartRef = useRef<HTMLDivElement>(null);
   const [wealthRadii, setWealthRadii] = useState({ height: 200, outer: 180, inner1: 151, inner2: 124 });
+  const [profile, setProfile] = useState<{
+    monthly_income: number; monthly_expenses: number;
+    liquid_cash: number; real_estate: number; pension: number; other_assets: number;
+    liabilities: number;
+  } | null>(null);
 
   useEffect(() => {
     const measure = () => {
@@ -47,6 +52,21 @@ export default function Dashboard() {
     const ro = new ResizeObserver(measure);
     if (chartContainerRef.current) ro.observe(chartContainerRef.current);
     return () => ro.disconnect();
+  }, []);
+
+  useEffect(() => {
+    async function loadProfile() {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data } = await supabase
+        .from("financial_profile")
+        .select("monthly_income, monthly_expenses, liquid_cash, real_estate, pension, other_assets, liabilities")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (data) setProfile(data);
+    }
+    loadProfile();
   }, []);
 
   useEffect(() => {
@@ -103,6 +123,44 @@ export default function Dashboard() {
     router.push("/");
   }
 
+
+  // Wealth computations
+  const investments = total ?? 0;
+  const liquidCash = profile?.liquid_cash ?? 0;
+  const realEstate = profile?.real_estate ?? 0;
+  const pension    = profile?.pension ?? 0;
+  const otherAsset = profile?.other_assets ?? 0;
+  const liabilitiesV = profile?.liabilities ?? 0;
+  const totalAssets = liquidCash + investments + realEstate + pension + otherAsset;
+  const netWorth = totalAssets - liabilitiesV;
+  const hasWealthData = totalAssets > 0 || liabilitiesV > 0;
+
+  const wealthAssets = hasWealthData ? [
+    { label: "Liquid Cash",  value: liquidCash, color: "#10B981" },
+    { label: "Investments", value: investments, color: "#1D4ED8" },
+    { label: "Real Estate", value: realEstate, color: "#F59E0B" },
+    { label: "Pension",     value: pension,    color: "#8B5CF6" },
+    { label: "Other",       value: otherAsset, color: "#6B7280" },
+  ].filter(a => a.value > 0) : [{ label: "Empty", value: 1, color: "#e4e4e7" }];
+
+  const wealthLiabs = liabilitiesV > 0
+    ? [{ label: "Liabilities", value: liabilitiesV, color: "#EF4444" }]
+    : [{ label: "Empty", value: 1, color: "#e4e4e7" }];
+
+  // Cashflow computations
+  const income = profile?.monthly_income ?? 0;
+  const expenses = profile?.monthly_expenses ?? 0;
+  const savings = income - expenses;
+  const savingsRate = income > 0 ? (savings / income) * 100 : null;
+  const expensesPct = income > 0 ? (expenses / income) * 100 : 0;
+  const savingsPct  = income > 0 ? Math.max(0, (savings / income) * 100) : 0;
+
+  // Health metrics
+  const emergencyFund = expenses > 0 ? liquidCash / expenses : null;
+  const debtToIncome  = income > 0 ? (liabilitiesV / (income * 12)) * 100 : null;
+  const liquidityRatio = totalAssets > 0 ? (liquidCash / totalAssets) * 100 : null;
+
+  const fmt = (n: number) => n.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-white dark:bg-black">
@@ -189,13 +247,7 @@ export default function Dashboard() {
                <PieChart>
                  {/* Outer ring — asset types */}
                  <Pie
-                   data={[
-                     { label: "Liquid Cash",  value: 25, color: "#10B981" },
-                     { label: "Investments", value: 25, color: "#1D4ED8" },
-                     { label: "Real Estate", value: 25, color: "#F59E0B" },
-                     { label: "Pension",     value: 25, color: "#8B5CF6" },
-                   ]}
-                   dataKey="value" nameKey="label"
+                   data={wealthAssets} dataKey="value" nameKey="label"
                    startAngle={180} endAngle={0}
                    cx="50%" cy="100%"
                    outerRadius={wealthRadii.outer} innerRadius={wealthRadii.inner1}
@@ -203,15 +255,11 @@ export default function Dashboard() {
                    fill="#e4e4e7"
                    stroke="#18181b" strokeWidth={1}
                  >
-                   <Cell fill="#e4e4e7" />
-                   <Cell fill="#e4e4e7" />
-                   <Cell fill="#e4e4e7" />
-                   <Cell fill="#e4e4e7" />
+                   {wealthAssets.map(a => <Cell key={a.label} fill={a.color} />)}
                  </Pie>
                  {/* Inner ring — liabilities (red) */}
                  <Pie
-                   data={[{ label: "Liabilities", value: 100, color: "#EF4444" }]}
-                   dataKey="value" nameKey="label"
+                   data={wealthLiabs} dataKey="value" nameKey="label"
                    startAngle={180} endAngle={0}
                    cx="50%" cy="100%"
                    outerRadius={wealthRadii.inner1} innerRadius={wealthRadii.inner2}
@@ -219,15 +267,15 @@ export default function Dashboard() {
                    fill="#e4e4e7"
                    stroke="#18181b" strokeWidth={1}
                  >
-                   <Cell fill="#e4e4e7" />
+                   {wealthLiabs.map(l => <Cell key={l.label} fill={l.color} />)}
                  </Pie>
                  <Tooltip
                    animationDuration={0}
                    content={({ active, payload }) => {
-                     if (!active || !payload?.length) return null;
+                     if (!active || !payload?.length || payload[0].name === "Empty") return null;
                      return (
                        <div style={{ borderRadius: "8px", border: "1px solid #e4e4e7", background: "#fff", padding: "6px 12px", fontSize: "13px" }}>
-                         {payload[0].name}: —
+                         {payload[0].name}: {fmt(payload[0].value as number)}
                        </div>
                      );
                    }}
@@ -236,7 +284,7 @@ export default function Dashboard() {
              </ResponsiveContainer>
 
              <div className="absolute bottom-0 left-1/2 -translate-x-1/2 text-center whitespace-nowrap">
-               <p style={{ fontSize: wealthRadii.outer * 0.16, fontWeight: 600 }} className="text-black dark:text-white leading-tight">—</p>
+               <p style={{ fontSize: wealthRadii.outer * 0.16, fontWeight: 600 }} className="text-black dark:text-white leading-tight">{hasWealthData ? fmt(netWorth) : "—"}</p>
                <p style={{ fontSize: wealthRadii.outer * 0.12, fontWeight: 700 }} className="leading-tight text-zinc-400">—%</p>
                <p style={{ fontSize: wealthRadii.outer * 0.055 }} className="text-zinc-400">in the last 12 months</p>
              </div>
@@ -247,14 +295,15 @@ export default function Dashboard() {
          <div className="flex flex-col rounded-xl border-2 border-zinc-900 p-5 dark:border-zinc-700">
            <div className="flex items-baseline justify-between">
              <span className="text-[10px] font-medium uppercase tracking-wider text-zinc-400">Savings Rate</span>
-             <span className="text-[10px] text-zinc-400">— / month</span>
+             <span className="text-[10px] text-zinc-400">{savings > 0 ? `${fmt(savings)} / month` : "— / month"}</span>
            </div>
-           <p className="mt-1 text-3xl font-semibold text-black dark:text-white">—%</p>
+           <p className={`mt-1 text-3xl font-semibold ${savingsRate === null ? "text-black dark:text-white" : savingsRate >= 20 ? "text-green-600" : savingsRate >= 10 ? "text-yellow-500" : "text-red-500"}`}>
+             {savingsRate === null ? "—%" : `${savingsRate.toFixed(0)}%`}
+           </p>
 
-           {/* Stacked horizontal bar: expenses + savings = income */}
            <div className="mt-4 flex h-6 w-full overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-900">
-             <div className="h-full bg-zinc-300 dark:bg-zinc-700" style={{ width: "0%" }} />
-             <div className="h-full bg-green-500" style={{ width: "0%" }} />
+             <div className="h-full bg-zinc-300 dark:bg-zinc-700" style={{ width: `${expensesPct}%` }} />
+             <div className="h-full bg-green-500" style={{ width: `${savingsPct}%` }} />
            </div>
 
            <div className="mt-3 flex flex-col gap-1.5 text-xs">
@@ -263,21 +312,21 @@ export default function Dashboard() {
                  <span className="h-2 w-2 rounded-full bg-black dark:bg-white" />
                  <span className="text-zinc-600 dark:text-zinc-400">Income</span>
                </div>
-               <span className="font-medium text-black dark:text-white">—</span>
+               <span className="font-medium text-black dark:text-white">{income > 0 ? fmt(income) : "—"}</span>
              </div>
              <div className="flex items-center justify-between">
                <div className="flex items-center gap-2">
                  <span className="h-2 w-2 rounded-full bg-zinc-400" />
                  <span className="text-zinc-600 dark:text-zinc-400">Expenses</span>
                </div>
-               <span className="font-medium text-black dark:text-white">—</span>
+               <span className="font-medium text-black dark:text-white">{expenses > 0 ? fmt(expenses) : "—"}</span>
              </div>
              <div className="flex items-center justify-between">
                <div className="flex items-center gap-2">
                  <span className="h-2 w-2 rounded-full bg-green-500" />
                  <span className="text-zinc-600 dark:text-zinc-400">Savings</span>
                </div>
-               <span className="font-medium text-black dark:text-white">—</span>
+               <span className="font-medium text-black dark:text-white">{income > 0 ? fmt(savings) : "—"}</span>
              </div>
            </div>
          </div>
@@ -285,19 +334,25 @@ export default function Dashboard() {
          {/* 2x2 grid of financial health cards */}
          <div className="grid flex-1 min-h-0 grid-cols-2 [grid-template-rows:repeat(2,minmax(0,1fr))] gap-2">
            <div className="flex flex-col items-center justify-center gap-0.5 rounded-xl border-2 border-zinc-900 py-2 dark:border-zinc-700">
-             <span className="text-2xl font-bold text-black dark:text-white">—</span>
+             <span className={`text-2xl font-bold ${emergencyFund === null ? "text-black dark:text-white" : emergencyFund >= 6 ? "text-green-600" : emergencyFund >= 3 ? "text-yellow-500" : "text-red-500"}`}>
+               {emergencyFund === null ? "—" : `${emergencyFund.toFixed(1)}`}
+             </span>
              <span className="text-xs font-medium text-black dark:text-white">Emergency Fund</span>
              <span className="text-[10px] text-zinc-400">months covered</span>
            </div>
            <div className="flex flex-col items-center justify-center gap-0.5 rounded-xl border-2 border-zinc-900 py-2 dark:border-zinc-700">
-             <span className="text-2xl font-bold text-black dark:text-white">—</span>
+             <span className={`text-2xl font-bold ${debtToIncome === null ? "text-black dark:text-white" : debtToIncome <= 40 ? "text-green-600" : debtToIncome <= 80 ? "text-yellow-500" : "text-red-500"}`}>
+               {debtToIncome === null ? "—" : `${debtToIncome.toFixed(0)}%`}
+             </span>
              <span className="text-xs font-medium text-black dark:text-white">Debt-to-Income</span>
-             <span className="text-[10px] text-zinc-400">debt vs income</span>
+             <span className="text-[10px] text-zinc-400">debt vs annual income</span>
            </div>
            <div className="flex flex-col items-center justify-center gap-0.5 rounded-xl border-2 border-zinc-900 py-2 dark:border-zinc-700">
-             <span className="text-2xl font-bold text-black dark:text-white">—</span>
+             <span className="text-2xl font-bold text-black dark:text-white">
+               {liquidityRatio === null ? "—" : `${liquidityRatio.toFixed(0)}%`}
+             </span>
              <span className="text-xs font-medium text-black dark:text-white">Liquidity Ratio</span>
-             <span className="text-[10px] text-zinc-400">liquid / total</span>
+             <span className="text-[10px] text-zinc-400">liquid / total assets</span>
            </div>
            <div className="flex flex-col items-center justify-center gap-0.5 rounded-xl border-2 border-zinc-900 py-2 dark:border-zinc-700">
              <span className="text-2xl font-bold text-black dark:text-white">—</span>
