@@ -301,11 +301,11 @@ export default function Dashboard() {
            </div>
          </div>
 
-         {/* Wrapper for cashflow + 2x2 health grid (matches center metric grid height) */}
-         <div className="flex flex-1 min-h-0 flex-col gap-2">
+         {/* Wrapper as 4-row CSS grid mirroring center metric grid exactly. Cashflow + 2x2 grid each row-span-2 */}
+         <div className="grid flex-1 min-h-0 [grid-template-rows:repeat(4,minmax(0,1fr))] gap-2">
 
-         {/* Cashflow graph card */}
-         <div className="flex flex-1 min-h-0 flex-col justify-between rounded-xl border-2 border-zinc-900 p-5 dark:border-zinc-700">
+         {/* Cashflow graph card — spans 2 rows */}
+         <div className="row-span-2 flex min-h-0 flex-col justify-between rounded-xl border-2 border-zinc-900 p-5 dark:border-zinc-700">
            <p className="flex items-center gap-3 text-3xl font-semibold text-black dark:text-white">
              Monthly Cashflow
              <button
@@ -355,8 +355,8 @@ export default function Dashboard() {
            </div>
          </div>
 
-         {/* 2x2 grid of financial health cards */}
-         <div className="grid flex-1 min-h-0 grid-cols-2 [grid-template-rows:repeat(2,minmax(0,1fr))] gap-2">
+         {/* 2x2 grid of financial health cards — spans 2 rows of the outer 4-row grid */}
+         <div className="row-span-2 grid min-h-0 grid-cols-2 [grid-template-rows:repeat(2,minmax(0,1fr))] gap-2">
            <div className="flex flex-col items-center justify-center gap-0.5 rounded-xl border-2 border-zinc-900 py-2 dark:border-zinc-700">
              <span className={`text-2xl font-bold ${emergencyFund === null ? "text-black dark:text-white" : emergencyFund >= 6 ? "text-green-600" : emergencyFund >= 3 ? "text-yellow-500" : "text-red-500"}`}>
                {emergencyFund === null ? "—" : `${emergencyFund.toFixed(1)}`}
