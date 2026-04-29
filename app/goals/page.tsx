@@ -4,14 +4,10 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
 
-const GOAL_TYPES = ["Retirement", "Home Purchase", "Education", "Emergency Fund", "Vehicle", "Vacation", "Wedding", "Other"];
-
 type Goal = {
   id: string;
   name: string;
-  type: string;
   target_amount: number;
-  current_amount: number;
   target_date: string | null;
 };
 
@@ -26,9 +22,7 @@ export default function Goals() {
   const [editGoal, setEditGoal] = useState<Partial<Goal>>({});
 
   const [name, setName] = useState("");
-  const [type, setType] = useState(GOAL_TYPES[0]);
   const [targetAmount, setTargetAmount] = useState("");
-  const [currentAmount, setCurrentAmount] = useState("");
   const [targetDate, setTargetDate] = useState("");
 
   const supabase = createClient();
@@ -38,7 +32,7 @@ export default function Goals() {
     if (!user) return;
     const { data } = await supabase
       .from("goals")
-      .select("id, name, type, target_amount, current_amount, target_date")
+      .select("id, name, target_amount, target_date")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false });
     setGoals(data ?? []);
@@ -56,14 +50,13 @@ export default function Goals() {
     const { error: err } = await supabase.from("goals").insert({
       user_id: user.id,
       name: name.trim(),
-      type,
+      type: "Other",
       target_amount: parseFloat(targetAmount),
-      current_amount: parseFloat(currentAmount) || 0,
       target_date: targetDate || null,
     });
     setSubmitting(false);
     if (err) { setError(err.message); return; }
-    setName(""); setType(GOAL_TYPES[0]); setTargetAmount(""); setCurrentAmount(""); setTargetDate("");
+    setName(""); setTargetAmount(""); setTargetDate("");
     fetchGoals();
   }
 
@@ -82,9 +75,7 @@ export default function Goals() {
   async function handleSaveEdit(id: string) {
     await supabase.from("goals").update({
       name: editGoal.name,
-      type: editGoal.type,
       target_amount: editGoal.target_amount,
-      current_amount: editGoal.current_amount,
       target_date: editGoal.target_date || null,
     }).eq("id", id);
     setEditingId(null);
@@ -120,32 +111,19 @@ export default function Goals() {
           ) : (
             <div className="flex flex-col gap-3">
               {goals.map((g) => {
-                const progress = g.target_amount > 0 ? Math.min(100, (Number(g.current_amount) / Number(g.target_amount)) * 100) : 0;
                 const isEditing = editingId === g.id;
                 return (
                   <div key={g.id} className="rounded-xl border-2 border-zinc-900 p-4 dark:border-zinc-700">
                     {isEditing ? (
                       <div className="flex flex-col gap-2">
+                        <input
+                          value={editGoal.name ?? ""} onChange={e => setEditGoal({ ...editGoal, name: e.target.value })}
+                          placeholder="Goal name"
+                          className="rounded-lg border border-zinc-300 px-2 py-1 text-sm outline-none focus:border-black dark:border-zinc-700 dark:bg-zinc-900 dark:text-white"
+                        />
                         <div className="flex gap-2">
                           <input
-                            value={editGoal.name ?? ""} onChange={e => setEditGoal({ ...editGoal, name: e.target.value })}
-                            className="flex-1 rounded-lg border border-zinc-300 px-2 py-1 text-sm outline-none focus:border-black dark:border-zinc-700 dark:bg-zinc-900 dark:text-white"
-                          />
-                          <select
-                            value={editGoal.type} onChange={e => setEditGoal({ ...editGoal, type: e.target.value })}
-                            className="rounded-lg border border-zinc-300 px-2 py-1 text-sm outline-none focus:border-black dark:border-zinc-700 dark:bg-zinc-900 dark:text-white"
-                          >
-                            {GOAL_TYPES.map(t => <option key={t}>{t}</option>)}
-                          </select>
-                        </div>
-                        <div className="flex gap-2">
-                          <input
-                            type="number" placeholder="Current"
-                            value={editGoal.current_amount ?? ""} onChange={e => setEditGoal({ ...editGoal, current_amount: parseFloat(e.target.value) || 0 })}
-                            className="flex-1 rounded-lg border border-zinc-300 px-2 py-1 text-sm outline-none focus:border-black dark:border-zinc-700 dark:bg-zinc-900 dark:text-white"
-                          />
-                          <input
-                            type="number" placeholder="Target"
+                            type="number" placeholder="Target Amount"
                             value={editGoal.target_amount ?? ""} onChange={e => setEditGoal({ ...editGoal, target_amount: parseFloat(e.target.value) || 0 })}
                             className="flex-1 rounded-lg border border-zinc-300 px-2 py-1 text-sm outline-none focus:border-black dark:border-zinc-700 dark:bg-zinc-900 dark:text-white"
                           />
@@ -165,32 +143,23 @@ export default function Goals() {
                         </div>
                       </div>
                     ) : (
-                      <>
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="flex flex-1 flex-col gap-1">
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm font-semibold text-black dark:text-white">{g.name}</span>
-                              <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-[10px] font-medium text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">{g.type}</span>
-                            </div>
-                            <span className="text-xs text-zinc-500">
-                              {fmt(Number(g.current_amount))} / {fmt(Number(g.target_amount))}
-                              {g.target_date && ` · by ${g.target_date}`}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <button onClick={() => startEdit(g)} className="text-zinc-400 hover:text-black dark:hover:text-white">
-                              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 256 256" fill="currentColor"><path d="M227.31,73.37,182.63,28.68a16,16,0,0,0-22.63,0L36.69,152A15.86,15.86,0,0,0,32,163.31V208a16,16,0,0,0,16,16H92.69A15.86,15.86,0,0,0,104,219.31L227.31,96a16,16,0,0,0,0-22.63ZM92.69,208H48V163.31l88-88L180.69,120ZM192,108.68,147.31,64l24-24L216,84.68Z"/></svg>
-                            </button>
-                            <button onClick={() => handleDelete(g.id)} disabled={deletingId === g.id} className="text-zinc-400 hover:text-red-500 disabled:opacity-40">
-                              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 256 256" fill="currentColor"><path d="M216,48H176V40a24,24,0,0,0-24-24H104A24,24,0,0,0,80,40v8H40a8,8,0,0,0,0,16h8V208a16,16,0,0,0,16,16H192a16,16,0,0,0,16-16V64h8a8,8,0,0,0,0-16ZM96,40a8,8,0,0,1,8-8h48a8,8,0,0,1,8,8v8H96Zm96,168H64V64H192ZM112,104v64a8,8,0,0,1-16,0V104a8,8,0,0,1,16,0Zm48,0v64a8,8,0,0,1-16,0V104a8,8,0,0,1,16,0Z"/></svg>
-                            </button>
-                          </div>
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex flex-1 flex-col gap-0.5">
+                          <span className="text-sm font-semibold text-black dark:text-white">{g.name}</span>
+                          <span className="text-xs text-zinc-500">
+                            {fmt(Number(g.target_amount))}
+                            {g.target_date && ` · by ${g.target_date}`}
+                          </span>
                         </div>
-                        <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-900">
-                          <div className="h-full bg-green-500" style={{ width: `${progress}%` }} />
+                        <div className="flex items-center gap-2">
+                          <button onClick={() => startEdit(g)} className="text-zinc-400 hover:text-black dark:hover:text-white">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 256 256" fill="currentColor"><path d="M227.31,73.37,182.63,28.68a16,16,0,0,0-22.63,0L36.69,152A15.86,15.86,0,0,0,32,163.31V208a16,16,0,0,0,16,16H92.69A15.86,15.86,0,0,0,104,219.31L227.31,96a16,16,0,0,0,0-22.63ZM92.69,208H48V163.31l88-88L180.69,120ZM192,108.68,147.31,64l24-24L216,84.68Z"/></svg>
+                          </button>
+                          <button onClick={() => handleDelete(g.id)} disabled={deletingId === g.id} className="text-zinc-400 hover:text-red-500 disabled:opacity-40">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 256 256" fill="currentColor"><path d="M216,48H176V40a24,24,0,0,0-24-24H104A24,24,0,0,0,80,40v8H40a8,8,0,0,0,0,16h8V208a16,16,0,0,0,16,16H192a16,16,0,0,0,16-16V64h8a8,8,0,0,0,0-16ZM96,40a8,8,0,0,1,8-8h48a8,8,0,0,1,8,8v8H96Zm96,168H64V64H192ZM112,104v64a8,8,0,0,1-16,0V104a8,8,0,0,1,16,0Zm48,0v64a8,8,0,0,1-16,0V104a8,8,0,0,1,16,0Z"/></svg>
+                          </button>
                         </div>
-                        <div className="mt-1 text-right text-[10px] text-zinc-400">{progress.toFixed(0)}% complete</div>
-                      </>
+                      </div>
                     )}
                   </div>
                 );
@@ -202,33 +171,16 @@ export default function Goals() {
           <div className="rounded-xl border-2 border-zinc-900 p-6 dark:border-zinc-700">
             <h2 className="mb-4 text-sm font-semibold text-black dark:text-white">Add goal</h2>
             <form onSubmit={handleAdd} className="flex flex-col gap-4">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs text-zinc-500">Name</label>
+                <input
+                  value={name} onChange={e => setName(e.target.value)}
+                  placeholder="House down payment"
+                  required
+                  className="h-10 rounded-lg border border-zinc-200 bg-white px-3 text-sm text-black outline-none focus:border-black dark:border-zinc-800 dark:bg-black dark:text-white dark:focus:border-white"
+                />
+              </div>
               <div className="grid grid-cols-2 gap-4">
-                <div className="flex flex-col gap-1.5 col-span-2">
-                  <label className="text-xs text-zinc-500">Name</label>
-                  <input
-                    value={name} onChange={e => setName(e.target.value)}
-                    placeholder="House down payment"
-                    required
-                    className="h-10 rounded-lg border border-zinc-200 bg-white px-3 text-sm text-black outline-none focus:border-black dark:border-zinc-800 dark:bg-black dark:text-white dark:focus:border-white"
-                  />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs text-zinc-500">Type</label>
-                  <select
-                    value={type} onChange={e => setType(e.target.value)}
-                    className="h-10 rounded-lg border border-zinc-200 bg-white px-3 text-sm text-black outline-none focus:border-black dark:border-zinc-800 dark:bg-black dark:text-white dark:focus:border-white"
-                  >
-                    {GOAL_TYPES.map(t => <option key={t}>{t}</option>)}
-                  </select>
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs text-zinc-500">Target Date</label>
-                  <input
-                    type="date"
-                    value={targetDate} onChange={e => setTargetDate(e.target.value)}
-                    className="h-10 rounded-lg border border-zinc-200 bg-white px-3 text-sm text-black outline-none focus:border-black dark:border-zinc-800 dark:bg-black dark:text-white dark:focus:border-white"
-                  />
-                </div>
                 <div className="flex flex-col gap-1.5">
                   <label className="text-xs text-zinc-500">Target Amount</label>
                   <input
@@ -239,11 +191,10 @@ export default function Goals() {
                   />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs text-zinc-500">Current Saved</label>
+                  <label className="text-xs text-zinc-500">Desired Timeline</label>
                   <input
-                    type="number" min="0" step="any"
-                    value={currentAmount} onChange={e => setCurrentAmount(e.target.value)}
-                    placeholder="0"
+                    type="date"
+                    value={targetDate} onChange={e => setTargetDate(e.target.value)}
                     className="h-10 rounded-lg border border-zinc-200 bg-white px-3 text-sm text-black outline-none focus:border-black dark:border-zinc-800 dark:bg-black dark:text-white dark:focus:border-white"
                   />
                 </div>
