@@ -211,6 +211,46 @@ export default function Dashboard() {
 
   const fmt = (n: number) => n.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 
+  // Goal projection helpers
+  function monthsBetween(from: Date, to: Date) {
+    return (to.getFullYear() - from.getFullYear()) * 12 + (to.getMonth() - from.getMonth());
+  }
+
+  function projectGoal(target: number, targetDateStr: string | null) {
+    if (!targetDateStr) return null;
+    const monthsToTarget = monthsBetween(new Date(), new Date(targetDateStr));
+    if (monthsToTarget <= 0) return null;
+    const annualRate = (expectedRealReturn ?? 0) / 100;
+    const r = annualRate / 12; // monthly rate
+    const wealth = netWorth;
+    // Required monthly contribution to hit target on time
+    const fvOfWealth = wealth * Math.pow(1 + r, monthsToTarget);
+    const remaining = target - fvOfWealth;
+    let requiredMonthly: number;
+    if (remaining <= 0) requiredMonthly = 0;
+    else if (Math.abs(r) < 1e-9) requiredMonthly = remaining / monthsToTarget;
+    else requiredMonthly = remaining / ((Math.pow(1 + r, monthsToTarget) - 1) / r);
+    // Months to achieve at current pace (savings as monthly contribution)
+    let w = wealth;
+    let mNow = 0;
+    const cap = 720;
+    while (w < target && mNow < cap) {
+      w = w * (1 + r) + Math.max(savings, 0);
+      mNow++;
+    }
+    const monthsAtCurrentRate = mNow >= cap ? null : mNow;
+    const monthsDelta = monthsAtCurrentRate !== null ? monthsToTarget - monthsAtCurrentRate : null;
+    return { monthsToTarget, requiredMonthly, monthsAtCurrentRate, monthsDelta };
+  }
+
+  function fmtDelta(monthsDelta: number) {
+    if (monthsDelta === 0) return "on schedule";
+    const abs = Math.abs(monthsDelta);
+    const dir = monthsDelta > 0 ? "earlier" : "later";
+    if (abs < 12) return `${abs}mo ${dir}`;
+    return `${(abs / 12).toFixed(1)}y ${dir}`;
+  }
+
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-white dark:bg-black">
       {loading && (
@@ -622,17 +662,39 @@ export default function Dashboard() {
                  <span className="text-sm text-zinc-400">No goals yet</span>
                </div>
              ) : (
-               goals.map((g) => (
-                 <div key={g.id} className="rounded-lg border border-zinc-200 p-3 dark:border-zinc-800">
-                   <div className="flex items-start justify-between gap-2">
-                     <span className="text-sm font-medium text-black dark:text-white">{g.name}</span>
-                     <span className="text-sm font-semibold text-black dark:text-white">{fmt(Number(g.target_amount))}</span>
+               goals.map((g) => {
+                 const proj = projectGoal(Number(g.target_amount), g.target_date);
+                 return (
+                   <div key={g.id} className="rounded-lg border border-zinc-200 p-3 dark:border-zinc-800">
+                     <div className="flex items-start justify-between gap-2">
+                       <span className="text-sm font-medium text-black dark:text-white">{g.name}</span>
+                       <span className="text-sm font-semibold text-black dark:text-white">{fmt(Number(g.target_amount))}</span>
+                     </div>
+                     {g.target_date && (
+                       <p className="mt-0.5 text-[10px] text-zinc-400">by {g.target_date.slice(0, 7)}</p>
+                     )}
+                     {proj && (
+                       <div className="mt-2 flex flex-col gap-0.5 text-[10px]">
+                         <div className="flex items-center justify-between">
+                           <span className="text-zinc-500">Need / month</span>
+                           <span className="font-medium text-black dark:text-white">{fmt(proj.requiredMonthly)}</span>
+                         </div>
+                         {proj.monthsDelta !== null && (
+                           <div className="flex items-center justify-between">
+                             <span className="text-zinc-500">At current pace</span>
+                             <span className={`font-medium ${proj.monthsDelta >= 0 ? "text-green-600" : "text-red-500"}`}>
+                               {fmtDelta(proj.monthsDelta)}
+                             </span>
+                           </div>
+                         )}
+                         {proj.monthsAtCurrentRate === null && (
+                           <p className="text-red-500">Not reachable at current pace</p>
+                         )}
+                       </div>
+                     )}
                    </div>
-                   {g.target_date && (
-                     <p className="mt-1 text-[10px] text-zinc-400">by {g.target_date.slice(0, 7)}</p>
-                   )}
-                 </div>
-               ))
+                 );
+               })
              )}
            </div>
          </div>
