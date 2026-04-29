@@ -52,7 +52,7 @@ export default function Goals() {
       name: name.trim(),
       type: "Other",
       target_amount: parseFloat(targetAmount),
-      target_date: targetDate || null,
+      target_date: targetDate ? `${targetDate}-01` : null,
     });
     setSubmitting(false);
     if (err) { setError(err.message); return; }
@@ -69,14 +69,14 @@ export default function Goals() {
 
   function startEdit(g: Goal) {
     setEditingId(g.id);
-    setEditGoal({ ...g });
+    setEditGoal({ ...g, target_date: g.target_date ? g.target_date.slice(0, 7) : null });
   }
 
   async function handleSaveEdit(id: string) {
     await supabase.from("goals").update({
       name: editGoal.name,
       target_amount: editGoal.target_amount,
-      target_date: editGoal.target_date || null,
+      target_date: editGoal.target_date ? `${editGoal.target_date}-01` : null,
     }).eq("id", id);
     setEditingId(null);
     fetchGoals();
@@ -128,7 +128,7 @@ export default function Goals() {
                             className="flex-1 rounded-lg border border-zinc-300 px-2 py-1 text-sm outline-none focus:border-black dark:border-zinc-700 dark:bg-zinc-900 dark:text-white"
                           />
                           <input
-                            type="date"
+                            type="month"
                             value={editGoal.target_date ?? ""} onChange={e => setEditGoal({ ...editGoal, target_date: e.target.value })}
                             className="rounded-lg border border-zinc-300 px-2 py-1 text-sm outline-none focus:border-black dark:border-zinc-700 dark:bg-zinc-900 dark:text-white"
                           />
@@ -148,7 +148,7 @@ export default function Goals() {
                           <span className="text-sm font-semibold text-black dark:text-white">{g.name}</span>
                           <span className="text-xs text-zinc-500">
                             {fmt(Number(g.target_amount))}
-                            {g.target_date && ` · by ${g.target_date}`}
+                            {g.target_date && ` · by ${g.target_date.slice(0, 7)}`}
                           </span>
                         </div>
                         <div className="flex items-center gap-2">
@@ -193,7 +193,7 @@ export default function Goals() {
                 <div className="flex flex-col gap-1.5">
                   <label className="text-xs text-zinc-500">Desired Timeline</label>
                   <input
-                    type="date"
+                    type="month"
                     value={targetDate} onChange={e => setTargetDate(e.target.value)}
                     className="h-10 rounded-lg border border-zinc-200 bg-white px-3 text-sm text-black outline-none focus:border-black dark:border-zinc-800 dark:bg-black dark:text-white dark:focus:border-white"
                   />
