@@ -201,7 +201,10 @@ export default function Dashboard() {
   // Health metrics
   const emergencyFund = expenses > 0 ? liquidCash / expenses : null;
   const debtToIncome  = income > 0 ? (liabilitiesV / (income * 12)) * 100 : null;
-  const liquidityRatio = totalAssets > 0 ? (liquidCash / totalAssets) * 100 : null;
+  // FIRE Coverage: how much of monthly expenses your asset income (4% safe withdrawal) covers
+  const fireCoverage = expenses > 0
+    ? ((totalAssets * 0.04) / 12 / expenses) * 100
+    : null;
 
   const fmt = (n: number) => n.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 
@@ -424,11 +427,11 @@ export default function Dashboard() {
              <span className="text-[10px] text-zinc-400">debt vs annual income</span>
            </div>
            <div className="flex flex-col items-center justify-center gap-0.5 rounded-xl border-2 border-zinc-900 py-2 dark:border-zinc-700">
-             <span className="text-2xl font-bold text-black dark:text-white">
-               {liquidityRatio === null ? "—" : `${liquidityRatio.toFixed(0)}%`}
+             <span className={`text-2xl font-bold ${fireCoverage === null ? "text-black dark:text-white" : fireCoverage >= 100 ? "text-green-600" : fireCoverage >= 50 ? "text-yellow-500" : "text-red-500"}`}>
+               {fireCoverage === null ? "—" : `${fireCoverage.toFixed(0)}%`}
              </span>
-             <span className="text-xs font-medium text-black dark:text-white">Liquidity Ratio</span>
-             <span className="text-[10px] text-zinc-400">liquid / total assets</span>
+             <span className="text-xs font-medium text-black dark:text-white">FIRE Coverage</span>
+             <span className="text-[10px] text-zinc-400">asset income vs expenses</span>
            </div>
            <div className="flex flex-col items-center justify-center gap-0.5 rounded-xl border-2 border-zinc-900 py-2 dark:border-zinc-700">
              <span className={`text-2xl font-bold ${savingsRate === null ? "text-black dark:text-white" : savingsRate >= 20 ? "text-green-600" : savingsRate >= 10 ? "text-yellow-500" : "text-red-500"}`}>
