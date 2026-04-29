@@ -308,8 +308,7 @@ export default function Dashboard() {
                <span className={savingsRate === null ? "" : savingsRate >= 20 ? "text-green-600" : savingsRate >= 10 ? "text-yellow-500" : "text-red-500"}>
                  {savingsRate === null ? "—%" : `${savingsRate.toFixed(0)}%`}
                </span>
-               {" saving rate · "}
-               {savings > 0 ? fmt(savings) : "—"}/month
+               {" saving rate"}
              </span>
              <button
                onClick={() => router.push("/cashflow")}
