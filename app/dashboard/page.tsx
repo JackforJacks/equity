@@ -356,7 +356,7 @@ export default function Dashboard() {
          </div>
 
          {/* 2x2 grid of financial health cards */}
-         <div className="grid flex-[1.4] min-h-0 grid-cols-2 [grid-template-rows:repeat(2,minmax(0,1fr))] gap-2">
+         <div className="grid flex-1 min-h-0 grid-cols-2 [grid-template-rows:repeat(2,minmax(0,1fr))] gap-2">
            <div className="flex flex-col items-center justify-center gap-0.5 rounded-xl border-2 border-zinc-900 py-2 dark:border-zinc-700">
              <span className={`text-2xl font-bold ${emergencyFund === null ? "text-black dark:text-white" : emergencyFund >= 6 ? "text-green-600" : emergencyFund >= 3 ? "text-yellow-500" : "text-red-500"}`}>
                {emergencyFund === null ? "—" : `${emergencyFund.toFixed(1)}`}
