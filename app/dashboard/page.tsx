@@ -209,6 +209,22 @@ export default function Dashboard() {
     ? ((totalAssets * 0.04) / 12 / expenses) * 100
     : null;
 
+  // Net worth 12-month growth estimate (from portfolio gain + asset class assumptions + savings)
+  const ASSUMED_RETURNS = { liquidCash: 0.03, realEstate: 0.04, pension: 0.06, otherAssets: 0.03 };
+  const portfolioReturn = pnl12m !== null ? pnl12m / 100 : 0.07;
+  const gainFrom = (current: number, ret: number) => current > 0 ? current - current / (1 + ret) : 0;
+  const totalAssetGrowth =
+    gainFrom(investments, portfolioReturn) +
+    gainFrom(liquidCash, ASSUMED_RETURNS.liquidCash) +
+    gainFrom(realEstate, ASSUMED_RETURNS.realEstate) +
+    gainFrom(pension, ASSUMED_RETURNS.pension) +
+    gainFrom(otherAsset, ASSUMED_RETURNS.otherAssets);
+  const annualSavings = savings > 0 ? savings * 12 : 0;
+  const nw12mAgo = netWorth - totalAssetGrowth - annualSavings;
+  const nwGrowthRate = (nw12mAgo > 0 && hasWealthData)
+    ? ((netWorth - nw12mAgo) / nw12mAgo) * 100
+    : null;
+
   const fmt = (n: number) => n.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 
   // Goal projection helpers
@@ -384,7 +400,9 @@ export default function Dashboard() {
 
              <div className="absolute bottom-0 left-1/2 -translate-x-1/2 text-center whitespace-nowrap">
                <p style={{ fontSize: wealthRadii.outer * 0.16, fontWeight: 600 }} className="text-black dark:text-white leading-tight">{hasWealthData ? fmt(netWorth) : "—"}</p>
-               <p style={{ fontSize: wealthRadii.outer * 0.12, fontWeight: 700 }} className="leading-tight text-zinc-400">—%</p>
+               <p style={{ fontSize: wealthRadii.outer * 0.12, fontWeight: 700 }} className={`leading-tight ${nwGrowthRate === null ? "text-zinc-400" : nwGrowthRate >= 0 ? "text-green-600" : "text-red-500"}`}>
+                 {nwGrowthRate === null ? "—%" : `${nwGrowthRate >= 0 ? "+" : ""}${nwGrowthRate.toFixed(1)}%`}
+               </p>
                <p style={{ fontSize: wealthRadii.outer * 0.055 }} className="text-zinc-400">in the last 12 months</p>
              </div>
            </div>
