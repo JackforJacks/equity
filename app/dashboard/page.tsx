@@ -341,7 +341,7 @@ export default function Dashboard() {
          {/* Net worth half donut — assets outer, liabilities inner */}
          <div className="flex flex-col items-center rounded-xl border-2 border-zinc-900 p-5 dark:border-zinc-700">
            <div className="mb-3 flex w-full items-center justify-between">
-             <span className="text-sm font-medium text-black dark:text-white">Net Worth</span>
+             <span className="text-sm font-medium text-black dark:text-white">NetWorth breakdown</span>
              <button
                onClick={() => router.push("/networth")}
                className="flex h-8 w-8 items-center justify-center rounded-full text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-black dark:hover:bg-zinc-800 dark:hover:text-white"
