@@ -601,9 +601,21 @@ export default function Dashboard() {
 
        {/* RIGHT COLUMN — Goal Tracker */}
        <div className="flex flex-1 min-h-0 flex-col gap-2">
-         <div className="flex flex-1 min-h-0 flex-col items-center justify-center rounded-xl border-2 border-zinc-900 p-5 dark:border-zinc-700">
-           <span className="text-xs font-medium uppercase tracking-wider text-zinc-400">Goal Tracker</span>
-           <span className="mt-3 text-zinc-300">—</span>
+         <div className="flex flex-1 min-h-0 flex-col rounded-xl border-2 border-zinc-900 p-5 dark:border-zinc-700">
+           <div className="flex w-full items-center justify-between">
+             <span className="text-sm font-medium text-black dark:text-white">Goal Setting</span>
+             <button
+               onClick={() => router.push("/goals")}
+               className="flex h-8 w-8 items-center justify-center rounded-full text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-black dark:hover:bg-zinc-800 dark:hover:text-white"
+             >
+               <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 256 256" fill="currentColor">
+                 <path d="M227.31,73.37,182.63,28.68a16,16,0,0,0-22.63,0L36.69,152A15.86,15.86,0,0,0,32,163.31V208a16,16,0,0,0,16,16H92.69A15.86,15.86,0,0,0,104,219.31L227.31,96a16,16,0,0,0,0-22.63ZM92.69,208H48V163.31l88-88L180.69,120ZM192,108.68,147.31,64l24-24L216,84.68Z"/>
+               </svg>
+             </button>
+           </div>
+           <div className="flex flex-1 items-center justify-center">
+             <span className="text-zinc-300">—</span>
+           </div>
          </div>
        </div>
       </main>
