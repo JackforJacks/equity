@@ -299,14 +299,6 @@ export default function Dashboard() {
                <p style={{ fontSize: wealthRadii.outer * 0.055 }} className="text-zinc-400">in the last 12 months</p>
              </div>
            </div>
-
-           {/* Bottom section: monthly saving rate */}
-           <div className="mt-4 flex w-full items-center justify-center gap-2 border-t border-zinc-100 pt-3 text-sm dark:border-zinc-800">
-             <span className={`font-semibold ${savingsRate === null ? "text-black dark:text-white" : savingsRate >= 20 ? "text-green-600" : savingsRate >= 10 ? "text-yellow-500" : "text-red-500"}`}>
-               {savingsRate === null ? "—%" : `${savingsRate.toFixed(0)}%`}
-             </span>
-             <span className="text-zinc-500">monthly saving rate</span>
-           </div>
          </div>
 
          {/* Wrapper for cashflow + 2x2 health grid (matches center metric grid height) */}
@@ -387,9 +379,11 @@ export default function Dashboard() {
              <span className="text-[10px] text-zinc-400">liquid / total assets</span>
            </div>
            <div className="flex flex-col items-center justify-center gap-0.5 rounded-xl border-2 border-zinc-900 py-2 dark:border-zinc-700">
-             <span className="text-2xl font-bold text-black dark:text-white">—</span>
-             <span className="text-xs font-medium text-black dark:text-white">Net Worth Δ</span>
-             <span className="text-[10px] text-zinc-400">12-month change</span>
+             <span className={`text-2xl font-bold ${savingsRate === null ? "text-black dark:text-white" : savingsRate >= 20 ? "text-green-600" : savingsRate >= 10 ? "text-yellow-500" : "text-red-500"}`}>
+               {savingsRate === null ? "—" : `${savingsRate.toFixed(0)}%`}
+             </span>
+             <span className="text-xs font-medium text-black dark:text-white">Saving Rate</span>
+             <span className="text-[10px] text-zinc-400">monthly</span>
            </div>
          </div>
          </div>
